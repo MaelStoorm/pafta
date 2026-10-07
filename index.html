@@ -41,6 +41,8 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;displa
 .fab svg{width:20px;height:20px}
 .fabs{position:absolute;right:12px;bottom:12px;display:flex;flex-direction:column;gap:8px}
 .zbtn{width:46px;height:46px;border-radius:12px;border:1px solid var(--line);background:var(--panel);font-size:24px;font-weight:700;line-height:1}
+.zbtn.small{font-size:12px;font-weight:800}
+.zbtn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .scale{position:absolute;left:12px;bottom:14px;font:600 12px ui-monospace,Menlo,monospace;color:var(--muted);pointer-events:none}
 .scale i{display:block;height:6px;border:2px solid var(--muted);border-top:0;margin-bottom:3px}
 
@@ -120,7 +122,8 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;displa
   <div class="fabs" id="fabs" hidden>
     <button class="zbtn" id="zIn" aria-label="Yakınlaştır">+</button>
     <button class="zbtn" id="zOut" aria-label="Uzaklaştır">−</button>
-    <button class="zbtn" id="zFit" aria-label="Tümünü göster" style="font-size:12px;font-weight:800">Tümü</button>
+    <button class="zbtn small" id="zNames" aria-pressed="true" aria-label="Nokta adlarını göster">Adlar</button>
+    <button class="zbtn small" id="zFit" aria-label="Tümünü göster">Tümü</button>
   </div>
   <div class="scale" id="scale" hidden></div>
   <div class="card" id="card" hidden></div>
@@ -155,6 +158,7 @@ const cv=$('cv'), ctx=cv.getContext('2d');
 let M=null;            // açık çizim
 let view={s:1,tx:0,ty:0};
 let mode='';           // '', 'coord', 'measure'
+let showNames=true;    // nokta adları
 let pick=null;         // koordinat modunda seçilen yer
 let meas=[];           // ölçüm noktaları [{x,y}]
 let dpr=Math.max(1,window.devicePixelRatio||1);
@@ -240,6 +244,17 @@ function draw(){
   const rad=view.s>4?2.6:1.8;
   M.dots.forEach(it=>{if(!it.L.visible)return; const [x,y]=toS(it.xy[0][0],it.xy[0][1]); if(x<-5||y<-5||x>r.width+5||y>r.height+5)return;
     ctx.fillStyle=it.color; ctx.beginPath(); if(it.kind==='Symbol'){ctx.rect(x-rad-.5,y-rad-.5,2*rad+1,2*rad+1);} else ctx.arc(x,y,rad,0,Math.PI*2); ctx.fill();});
+  // nokta adları (kalabalıkta okunur kalsın diye yeterince yakınlaşınca)
+  if(showNames){
+    const vis=[]; M.dots.forEach(it=>{if(!it.L.visible||!(it.name||'').trim())return; const [x,y]=toS(it.xy[0][0],it.xy[0][1]); if(x>-40&&y>-20&&x<r.width+40&&y<r.height+20)vis.push([it,x,y]);});
+    if(vis.length&&vis.length<=600){
+      ctx.font='600 11px system-ui,sans-serif'; ctx.textBaseline='bottom'; ctx.lineWidth=3; ctx.strokeStyle='rgba(0,0,0,.85)';
+      const taken=[]; // üst üste binenleri atla
+      vis.forEach(([it,x,y])=>{const t=it.name.trim(), w=ctx.measureText(t).width, bx=x+5, by=y-3;
+        if(taken.some(b=>bx<b[2]&&bx+w>b[0]&&by-12<b[3]&&by>b[1]))return; taken.push([bx,by-12,bx+w,by]);
+        ctx.strokeText(t,bx,by); ctx.fillStyle=it.color; ctx.fillText(t,bx,by);});
+    }
+  }
   // yazılar
   M.texts.forEach(it=>{if(!it.L.visible)return; const px=(it.h||1)*view.s; if(px<4)return; const [x,y]=toS(it.xy[0][0],it.xy[0][1]);
     if(x<-400||y<-200||x>r.width+400||y>r.height+200)return;
@@ -338,8 +353,9 @@ function closeSheet(){$('sheet').hidden=true;}
 $('shClose').onclick=closeSheet; $('sheet').addEventListener('click',e=>{if(e.target===$('sheet'))closeSheet();});
 function openLayers(){
   const rows=M.layers.map((L,i)=>`<button class="lyr" role="switch" aria-checked="${L.visible}" data-i="${i}"><span class="dot" style="background:${L.color}"></span><span class="nm">${esc(L.name)}</span><span class="cnt">${L.count}</span><span class="sw"></span></button>`).join('');
-  sheet('Katmanlar ('+M.layers.length+')',`<div class="two"><button id="lAll">Hepsini göster</button><button id="lNone">Hepsini gizle</button></div>${rows}`);
-  $('shBody').onclick=e=>{const b=e.target.closest('.lyr'); if(b){const L=M.layers[+b.dataset.i]; L.visible=!L.visible; b.setAttribute('aria-checked',L.visible); draw();}
+  sheet('Katmanlar ('+M.layers.length+')',`<button class="lyr" role="switch" id="lNames" aria-checked="${showNames}"><span class="nm">Nokta adlarını göster</span><span class="sw"></span></button><div class="two" style="margin-top:10px"><button id="lAll">Hepsini göster</button><button id="lNone">Hepsini gizle</button></div>${rows}`);
+  $('shBody').onclick=e=>{if(e.target.closest('#lNames')){showNames=!showNames;$('lNames').setAttribute('aria-checked',showNames);$('zNames').setAttribute('aria-pressed',showNames);draw();return;}
+    const b=e.target.closest('.lyr'); if(b){const L=M.layers[+b.dataset.i]; L.visible=!L.visible; b.setAttribute('aria-checked',L.visible); draw();}
     if(e.target.id==='lAll'||e.target.id==='lNone'){const v=e.target.id==='lAll'; M.layers.forEach(L=>L.visible=v); openLayers(); draw();}};
 }
 function exportPoints(onlyVisible){
@@ -448,6 +464,7 @@ $('infoBtn').onclick=openAbout;
 $('bLayers').onclick=openLayers; $('bExport').onclick=openExport;
 $('bCoord').onclick=()=>setMode('coord'); $('bMeasure').onclick=()=>setMode('measure');
 $('zFit').onclick=fit;
+$('zNames').onclick=()=>{showNames=!showNames;$('zNames').setAttribute('aria-pressed',showNames);draw();};
 $('zIn').onclick=()=>{const r=cv.getBoundingClientRect();zoomAt(1.6,r.width/2,r.height/2);};
 $('zOut').onclick=()=>{const r=cv.getBoundingClientRect();zoomAt(1/1.6,r.width/2,r.height/2);};
 window.addEventListener('resize',()=>{clearTimeout(resize.t);resize.t=setTimeout(()=>{const r=cv.getBoundingClientRect();const keep=M&&cv.width;resize();if(M&&!keep)fit();},120);});
