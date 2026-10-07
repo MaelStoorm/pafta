@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<meta name="theme-color" content="#ffc20e">
+<meta name="theme-color" content="#1e6b47">
 <title>Pafta</title>
 <style>
 :root{
-  --bg:#0b0b0a; --panel:#181816; --panel2:#22221f; --line:#33322d; --ink:#f2f1ea; --muted:#a3a197;
-  --accent:#ffc20e; --accent-ink:#141412; --ok:#7bd88f; --err:#ff6b5e;
+  --bg:#050806; --panel:#0f1512; --panel2:#17211c; --line:#26352d; --ink:#eef4f0; --muted:#9aaba2;
+  --accent:#1e6b47; --accent-ink:#ffffff; --hl:#3fd08f; --ok:#7bd88f; --err:#ff6b5e;
   --safe-t:env(safe-area-inset-top,0px); --safe-b:env(safe-area-inset-bottom,0px);
 }
 *{box-sizing:border-box}
@@ -16,7 +16,7 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family
 body{display:flex;flex-direction:column;overflow:hidden;user-select:none;-webkit-user-select:none}
 [hidden]{display:none!important}
 button{font:inherit;color:inherit;cursor:pointer}
-button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+button:focus-visible{outline:3px solid var(--hl);outline-offset:2px}
 
 /* üst bar */
 .top{display:flex;align-items:center;gap:10px;padding:calc(8px + var(--safe-t)) 12px 8px;background:var(--accent);color:var(--accent-ink);flex:none;z-index:5}
@@ -31,7 +31,7 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 main{position:relative;flex:1;min-height:0;overflow:hidden;background:var(--bg)}
 canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;display:block}
 .empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center}
-.empty svg{width:84px;height:84px;color:var(--accent)}
+.empty svg{width:84px;height:84px;color:var(--hl)}
 .empty h1{margin:4px 0 0;font-size:24px}
 .empty p{margin:0;color:var(--muted);font-size:15px;max-width:300px;line-height:1.45}
 .bigbtn{border:0;border-radius:14px;padding:14px 26px;font-weight:800;font-size:17px;background:var(--accent);color:var(--accent-ink);min-width:240px}
@@ -87,7 +87,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;displa
 .fmt button b{font-size:17px}
 .fmt button span{font-weight:500;font-size:12.5px;color:var(--muted)}
 .chk{display:flex;align-items:center;gap:10px;padding:10px 2px;font-size:15px}
-.chk input{width:22px;height:22px;accent-color:var(--accent)}
+.chk input{width:22px;height:22px;accent-color:var(--hl)}
 .note{color:var(--muted);font-size:13.5px;line-height:1.5;margin:8px 0}
 .about p{line-height:1.55;font-size:14.5px;margin:8px 0}
 .toast{position:fixed;left:50%;bottom:calc(90px + var(--safe-b));transform:translateX(-50%);background:#000e;color:#fff;border:1px solid var(--line);padding:10px 16px;border-radius:12px;font-size:14px;font-weight:600;z-index:30;max-width:90vw;text-align:center}
@@ -97,7 +97,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;displa
 <body>
 <header class="top">
   <div class="brand">
-    <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="3" y="3" width="26" height="26" rx="5" fill="#141412"/><path d="M8 22 L14 9 L24 13 L20 24 Z" fill="none" stroke="#ffc20e" stroke-width="2.4" stroke-linejoin="round"/><circle cx="8" cy="22" r="2.2" fill="#ffc20e"/><circle cx="14" cy="9" r="2.2" fill="#ffc20e"/><circle cx="24" cy="13" r="2.2" fill="#ffc20e"/><circle cx="20" cy="24" r="2.2" fill="#ffc20e"/></svg>
+    <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="3" y="3" width="26" height="26" rx="5" fill="#050806"/><path d="M8 22 L14 9 L24 13 L20 24 Z" fill="none" stroke="#3fd08f" stroke-width="2.4" stroke-linejoin="round"/><circle cx="8" cy="22" r="2.2" fill="#3fd08f"/><circle cx="14" cy="9" r="2.2" fill="#3fd08f"/><circle cx="24" cy="13" r="2.2" fill="#3fd08f"/><circle cx="20" cy="24" r="2.2" fill="#3fd08f"/></svg>
     Pafta
   </div>
   <div class="fname" id="fname"></div>
@@ -246,14 +246,14 @@ function draw(){
     ctx.save(); ctx.translate(x,y); if(it.rot)ctx.rotate(-it.rot*Math.PI/180); ctx.fillStyle=it.color; ctx.font=Math.min(px,200).toFixed(1)+'px system-ui,sans-serif'; ctx.textBaseline='alphabetic'; ctx.fillText(it.text,0,0); ctx.restore();});
   // ölçüm
   if(meas.length){
-    ctx.strokeStyle='#ffc20e'; ctx.lineWidth=2.5; ctx.setLineDash([]); ctx.beginPath();
+    ctx.strokeStyle='#3fd08f'; ctx.lineWidth=2.5; ctx.setLineDash([]); ctx.beginPath();
     meas.forEach((p,i)=>{const [x,y]=toS(p.x,p.y); i?ctx.lineTo(x,y):ctx.moveTo(x,y);}); ctx.stroke();
     if(meas.length>2){ctx.setLineDash([6,6]); const a=toS(meas[meas.length-1].x,meas[meas.length-1].y), b=toS(meas[0].x,meas[0].y); ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.stroke(); ctx.setLineDash([]);
-      ctx.fillStyle='#ffc20e22'; ctx.beginPath(); meas.forEach((p,i)=>{const [x,y]=toS(p.x,p.y); i?ctx.lineTo(x,y):ctx.moveTo(x,y);}); ctx.closePath(); ctx.fill();}
-    meas.forEach((p,i)=>{const [x,y]=toS(p.x,p.y); ctx.fillStyle='#141412'; ctx.strokeStyle='#ffc20e'; ctx.lineWidth=2.5; ctx.beginPath(); ctx.arc(x,y,6,0,Math.PI*2); ctx.fill(); ctx.stroke();});
+      ctx.fillStyle='#3fd08f22'; ctx.beginPath(); meas.forEach((p,i)=>{const [x,y]=toS(p.x,p.y); i?ctx.lineTo(x,y):ctx.moveTo(x,y);}); ctx.closePath(); ctx.fill();}
+    meas.forEach((p,i)=>{const [x,y]=toS(p.x,p.y); ctx.fillStyle='#050806'; ctx.strokeStyle='#3fd08f'; ctx.lineWidth=2.5; ctx.beginPath(); ctx.arc(x,y,6,0,Math.PI*2); ctx.fill(); ctx.stroke();});
   }
   // koordinat imleci
-  if(pick){const [x,y]=toS(pick.x,pick.y); ctx.strokeStyle='#ffc20e'; ctx.lineWidth=2;
+  if(pick){const [x,y]=toS(pick.x,pick.y); ctx.strokeStyle='#3fd08f'; ctx.lineWidth=2;
     ctx.beginPath(); ctx.moveTo(x-16,y); ctx.lineTo(x-5,y); ctx.moveTo(x+5,y); ctx.lineTo(x+16,y); ctx.moveTo(x,y-16); ctx.lineTo(x,y-5); ctx.moveTo(x,y+5); ctx.lineTo(x,y+16); ctx.stroke();
     ctx.beginPath(); ctx.arc(x,y,9,0,Math.PI*2); ctx.stroke();}
   updateScale(r.width);
@@ -432,7 +432,7 @@ function loadBytes(bytes,name){
       clearMode();
       resize(); fit();
       const un=Object.values(M.unsupported).reduce((a,b)=>a+b,0);
-      toast(M.items.length+' nesne · '+M.layers.length+' katman'+(un?' · '+un+' nesne gösterilemedi':''));
+      toast(M.items.length+' nesne · '+M.layers.length+' katman');
     }catch(e){toast('Dosya açılamadı: '+(e&&e.message?e.message:'bilinmeyen hata'));}
     $('busy').hidden=true;
   },30);
