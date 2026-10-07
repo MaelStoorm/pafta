@@ -1,0 +1,47 @@
+plugins {
+    id 'com.android.application'
+}
+
+// AdMob kimlikleri. Ortam değişkeni yoksa Google'ın resmi TEST kimlikleri kullanılır.
+def TEST_APP_ID    = "ca-app-pub-3940256099942544~3347511713"
+def TEST_BANNER_ID = "ca-app-pub-3940256099942544/9214589741"
+def releaseAppId    = System.getenv("ADMOB_APP_ID") ?: TEST_APP_ID
+def releaseBannerId = System.getenv("ADMOB_BANNER_ID") ?: TEST_BANNER_ID
+
+android {
+    namespace 'com.egemen.pafta'
+    compileSdk 36
+
+    defaultConfig {
+        applicationId "com.egemen.pafta"
+        minSdk 24
+        targetSdk 36
+        versionCode Integer.parseInt(System.getenv("VERSION_CODE") ?: "1")
+        versionName "1.0.0"
+    }
+
+    buildTypes {
+        debug {
+            manifestPlaceholders = [admobAppId: TEST_APP_ID]
+            resValue "string", "admob_banner_id", TEST_BANNER_ID
+            resValue "string", "app_name", "Pafta"
+        }
+        release {
+            minifyEnabled false
+            manifestPlaceholders = [admobAppId: releaseAppId]
+            resValue "string", "admob_banner_id", releaseBannerId
+            resValue "string", "app_name", "Pafta"
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation 'androidx.webkit:webkit:1.12.1'
+    implementation 'com.google.android.gms:play-services-ads:24.4.0'
+    implementation 'com.google.android.ump:user-messaging-platform:3.2.0'
+}

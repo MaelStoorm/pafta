@@ -7,3 +7,10 @@ NCZ okuma kısmı, Erdinç Örsan Ünal'ın GPL lisanslı NCZ okuyucusu temel al
 Netcad, Netcad Yazılım A.Ş.'nin tescilli markasıdır. Pafta, Netcad Yazılım A.Ş. ile bağlantılı değildir.
 
 Lisans: GNU GPL, sürüm 2 veya sonrası.
+
+## Klasörler
+
+- `app/src/main/assets/` — uygulamanın arayüzü (`index.html`) ve NCZ okuyucu (`ncz.js`)
+- `app/` — Android kabuğu (WebView, dosya açma/kaydetme, alt banner reklam)
+- `docs/` — gizlilik politikası
+- `store/` — Google Play görselleri
