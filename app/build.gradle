@@ -5,8 +5,9 @@ plugins {
 // AdMob kimlikleri. Ortam değişkeni yoksa Google'ın resmi TEST kimlikleri kullanılır.
 def TEST_APP_ID    = "ca-app-pub-3940256099942544~3347511713"
 def TEST_BANNER_ID = "ca-app-pub-3940256099942544/9214589741"
-def releaseAppId    = System.getenv("ADMOB_APP_ID") ?: TEST_APP_ID
-def releaseBannerId = System.getenv("ADMOB_BANNER_ID") ?: TEST_BANNER_ID
+// Pafta'nın gerçek AdMob kimlikleri (gizli değildir, uygulamanın içinde zaten görünür)
+def releaseAppId    = System.getenv("ADMOB_APP_ID") ?: "ca-app-pub-3290411400875200~8374020825"
+def releaseBannerId = System.getenv("ADMOB_BANNER_ID") ?: "ca-app-pub-3290411400875200/6332154729"
 
 android {
     namespace 'com.egemen.pafta'
