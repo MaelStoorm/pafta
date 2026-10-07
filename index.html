@@ -1,0 +1,486 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#ffc20e">
+<title>Pafta</title>
+<style>
+:root{
+  --bg:#0b0b0a; --panel:#181816; --panel2:#22221f; --line:#33322d; --ink:#f2f1ea; --muted:#a3a197;
+  --accent:#ffc20e; --accent-ink:#141412; --ok:#7bd88f; --err:#ff6b5e;
+  --safe-t:env(safe-area-inset-top,0px); --safe-b:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
+body{display:flex;flex-direction:column;overflow:hidden;user-select:none;-webkit-user-select:none}
+[hidden]{display:none!important}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+/* üst bar */
+.top{display:flex;align-items:center;gap:10px;padding:calc(8px + var(--safe-t)) 12px 8px;background:var(--accent);color:var(--accent-ink);flex:none;z-index:5}
+.brand{display:flex;align-items:center;gap:8px;font-weight:800;font-size:22px;letter-spacing:.01em}
+.brand svg{width:30px;height:30px}
+.fname{flex:1;min-width:0;font:600 13px ui-monospace,Menlo,monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.75}
+.topbtn{border:2px solid var(--accent-ink);background:transparent;color:var(--accent-ink);border-radius:10px;padding:7px 12px;font-weight:800;font-size:15px;display:flex;align-items:center;gap:6px}
+.topbtn svg{width:18px;height:18px}
+.info{width:34px;height:34px;padding:0;justify-content:center;border-radius:50%;font:italic 700 17px Georgia,serif}
+
+/* çizim alanı */
+main{position:relative;flex:1;min-height:0;overflow:hidden;background:var(--bg)}
+canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;display:block}
+.empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center}
+.empty svg{width:84px;height:84px;color:var(--accent)}
+.empty h1{margin:4px 0 0;font-size:24px}
+.empty p{margin:0;color:var(--muted);font-size:15px;max-width:300px;line-height:1.45}
+.bigbtn{border:0;border-radius:14px;padding:14px 26px;font-weight:800;font-size:17px;background:var(--accent);color:var(--accent-ink);min-width:240px}
+.ghost{border:1px solid var(--line);border-radius:14px;padding:12px 22px;font-weight:700;font-size:15px;background:var(--panel);min-width:240px}
+.hint{position:absolute;top:10px;left:50%;transform:translateX(-50%);background:#000c;border:1px solid var(--line);color:var(--ink);padding:7px 14px;border-radius:999px;font-size:14px;font-weight:600;white-space:nowrap;pointer-events:none}
+.fab{position:absolute;right:12px;top:10px;border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:8px 10px;font-size:13px;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:2px}
+.fab svg{width:20px;height:20px}
+.fabs{position:absolute;right:12px;bottom:12px;display:flex;flex-direction:column;gap:8px}
+.zbtn{width:46px;height:46px;border-radius:12px;border:1px solid var(--line);background:var(--panel);font-size:24px;font-weight:700;line-height:1}
+.scale{position:absolute;left:12px;bottom:14px;font:600 12px ui-monospace,Menlo,monospace;color:var(--muted);pointer-events:none}
+.scale i{display:block;height:6px;border:2px solid var(--muted);border-top:0;margin-bottom:3px}
+
+/* sonuç kartı */
+.card{position:absolute;left:10px;right:10px;bottom:10px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:12px 14px;box-shadow:0 10px 30px #0008;max-width:520px;margin:0 auto}
+.card .row{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:3px 0}
+.card .k{color:var(--muted);font-size:14px}
+.card .v{font:700 18px ui-monospace,Menlo,monospace}
+.card .title{font-weight:800;font-size:15px;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.card .acts{display:flex;gap:8px;margin-top:10px}
+.card .acts button{flex:1;border:1px solid var(--line);background:var(--panel2);border-radius:10px;padding:10px;font-weight:700;font-size:14px}
+.card .acts button.pri{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.tag{font-size:12px;font-weight:700;background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:2px 8px;color:var(--muted)}
+
+/* alt bar */
+.bar{display:grid;grid-template-columns:repeat(4,1fr);background:var(--panel);border-top:1px solid var(--line);padding:6px 6px calc(6px + var(--safe-b));flex:none;z-index:5}
+.bar button{border:0;background:transparent;border-radius:12px;padding:6px 2px;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:13px;font-weight:700;color:var(--muted)}
+.bar button svg{width:26px;height:26px}
+.bar button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.bar button:disabled{opacity:.35}
+
+/* alt pencere */
+.sheet{position:fixed;inset:0;background:#0009;z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.sheet-in{background:var(--panel);width:100%;max-width:560px;max-height:82vh;border-radius:20px 20px 0 0;padding:6px 16px calc(16px + var(--safe-b));display:flex;flex-direction:column;animation:up .22s ease-out}
+@keyframes up{from{transform:translateY(40px);opacity:.4}}
+.grab{width:40px;height:5px;border-radius:3px;background:var(--line);margin:6px auto 8px}
+.sh-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+.sh-head h2{margin:0;font-size:20px}
+.x{border:0;background:var(--panel2);width:36px;height:36px;border-radius:50%;font-size:20px}
+.sh-body{overflow-y:auto;-webkit-overflow-scrolling:touch}
+.lyr{display:flex;align-items:center;gap:12px;padding:11px 4px;border-bottom:1px solid var(--line);width:100%;background:none;border-left:0;border-right:0;border-top:0;text-align:left}
+.lyr .dot{width:16px;height:16px;border-radius:4px;flex:none;border:1px solid #fff3}
+.lyr .nm{flex:1;min-width:0;font-weight:600;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lyr .cnt{color:var(--muted);font-size:13px}
+.sw{width:44px;height:26px;border-radius:13px;background:var(--line);position:relative;flex:none;transition:background .15s}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left .15s}
+.lyr[aria-checked="true"] .sw{background:var(--accent)}
+.lyr[aria-checked="true"] .sw::after{left:21px}
+.lyr[aria-checked="false"] .nm{color:var(--muted)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:6px}
+.two button,.fmt button{border:1px solid var(--line);background:var(--panel2);border-radius:12px;padding:12px;font-weight:700;font-size:15px}
+.fmt{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.fmt button{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;padding:14px}
+.fmt button b{font-size:17px}
+.fmt button span{font-weight:500;font-size:12.5px;color:var(--muted)}
+.chk{display:flex;align-items:center;gap:10px;padding:10px 2px;font-size:15px}
+.chk input{width:22px;height:22px;accent-color:var(--accent)}
+.note{color:var(--muted);font-size:13.5px;line-height:1.5;margin:8px 0}
+.about p{line-height:1.55;font-size:14.5px;margin:8px 0}
+.toast{position:fixed;left:50%;bottom:calc(90px + var(--safe-b));transform:translateX(-50%);background:#000e;color:#fff;border:1px solid var(--line);padding:10px 16px;border-radius:12px;font-size:14px;font-weight:600;z-index:30;max-width:90vw;text-align:center}
+.busy{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#000a;font-weight:700;font-size:16px}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="3" y="3" width="26" height="26" rx="5" fill="#141412"/><path d="M8 22 L14 9 L24 13 L20 24 Z" fill="none" stroke="#ffc20e" stroke-width="2.4" stroke-linejoin="round"/><circle cx="8" cy="22" r="2.2" fill="#ffc20e"/><circle cx="14" cy="9" r="2.2" fill="#ffc20e"/><circle cx="24" cy="13" r="2.2" fill="#ffc20e"/><circle cx="20" cy="24" r="2.2" fill="#ffc20e"/></svg>
+    Pafta
+  </div>
+  <div class="fname" id="fname"></div>
+  <button class="topbtn" id="openBtn" aria-label="Dosya aç">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Aç
+  </button>
+  <button class="topbtn info" id="infoBtn" aria-label="Hakkında">i</button>
+</header>
+
+<main id="stage">
+  <canvas id="cv"></canvas>
+  <div class="empty" id="empty">
+    <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="48" height="48" rx="6"/><path d="M18 44 L26 20 L44 26 L38 46 Z"/><circle cx="18" cy="44" r="3" fill="currentColor"/><circle cx="26" cy="20" r="3" fill="currentColor"/><circle cx="44" cy="26" r="3" fill="currentColor"/><circle cx="38" cy="46" r="3" fill="currentColor"/></svg>
+    <h1>NCZ çizimini aç</h1>
+    <p>Netcad'de çizilmiş .NCZ dosyalarını telefonunda görüntüle, koordinat oku ve ölçüm yap.</p>
+    <button class="bigbtn" id="emptyOpen">Dosya aç</button>
+    <button class="ghost" id="demoBtn">Örnek çizimi göster</button>
+  </div>
+  <div class="hint" id="hint" hidden></div>
+  <div class="fabs" id="fabs" hidden>
+    <button class="zbtn" id="zIn" aria-label="Yakınlaştır">+</button>
+    <button class="zbtn" id="zOut" aria-label="Uzaklaştır">−</button>
+    <button class="zbtn" id="zFit" aria-label="Tümünü göster" style="font-size:12px;font-weight:800">Tümü</button>
+  </div>
+  <div class="scale" id="scale" hidden></div>
+  <div class="card" id="card" hidden></div>
+  <div class="busy" id="busy" hidden>Açılıyor…</div>
+</main>
+
+<nav class="bar" id="bar">
+  <button id="bLayers" disabled>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 2 8l10 5 10-5z"/><path d="m2 13 10 5 10-5"/><path d="m2 18 10 5 10-5" opacity=".5"/></svg>Katmanlar</button>
+  <button id="bCoord" aria-pressed="false" disabled>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="7"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>Koordinat</button>
+  <button id="bMeasure" aria-pressed="false" disabled>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="8" width="20" height="8" rx="1.5" transform="rotate(-30 12 12)"/><path d="M7.5 11.5 9 14M11 9.5l1.5 2.5M14.5 7.5 16 10" transform="rotate(0)"/></svg>Ölç</button>
+  <button id="bExport" disabled>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 17v3h16v-3"/></svg>Dışa aktar</button>
+</nav>
+
+<div class="sheet" id="sheet" hidden><div class="sheet-in" role="dialog" aria-modal="true">
+  <div class="grab"></div>
+  <div class="sh-head"><h2 id="shTitle"></h2><button class="x" id="shClose" aria-label="Kapat">×</button></div>
+  <div class="sh-body" id="shBody"></div>
+</div></div>
+<div class="toast" id="toast" hidden></div>
+<input type="file" id="fileIn" accept=".ncz,.NCZ" hidden>
+
+<script src="ncz.js"></script>
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+const AB=window.AndroidBridge||null;
+const cv=$('cv'), ctx=cv.getContext('2d');
+let M=null;            // açık çizim
+let view={s:1,tx:0,ty:0};
+let mode='';           // '', 'coord', 'measure'
+let pick=null;         // koordinat modunda seçilen yer
+let meas=[];           // ölçüm noktaları [{x,y}]
+let dpr=Math.max(1,window.devicePixelRatio||1);
+
+/* ---------- yardımcılar ---------- */
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const f3=v=>v.toFixed(3);
+function toast(t){const e=$('toast');e.textContent=t;e.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>e.hidden=true,3200);}
+function argbToCss(a){
+  if(a==null)return '#e8e8e8';
+  const r=(a>>>16)&255,g=(a>>>8)&255,b=a&255;
+  const lum=(0.299*r+0.587*g+0.114*b)/255;
+  if(lum<0.22)return '#e8e8e8'; // siyah çizgiler koyu zeminde beyaz görünsün (Netcad gibi)
+  return 'rgb('+r+','+g+','+b+')';
+}
+
+/* ---------- çizimi modele çevir ---------- */
+function buildModel(r,fileName){
+  const lyrMap=new Map(); const items=[];
+  const names=r.layer_names||[], cols=r.layer_colors||[];
+  let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+  (r.entities||[]).forEach((e,i)=>{
+    const cs=e.coordinates||[]; if(!cs.length)return;
+    const lname=e.layer_name||('Katman '+e.layer_code);
+    let L=lyrMap.get(lname);
+    if(!L){const idx=names.indexOf(lname);L={name:lname,color:argbToCss(idx>=0?cols[idx]:e.color_argb),count:0,visible:true,points:0};lyrMap.set(lname,L);}
+    L.count++;
+    const kind=e.geometry_kind;
+    const it={kind,L,color:e.color_argb!=null?argbToCss(e.color_argb):L.color,xy:cs.map(c=>[c.x,c.y]),z:cs[0].z,closed:!!e.is_closed||kind==='Polygon',
+      text:e.label_text||'',name:e.name||'',h:e.text_height||0,rot:e.rotation_degrees||0};
+    if(kind==='Point'||kind==='Symbol')L.points++;
+    cs.forEach(c=>{if(c.x<minX)minX=c.x;if(c.x>maxX)maxX=c.x;if(c.y<minY)minY=c.y;if(c.y>maxY)maxY=c.y;});
+    items.push(it);
+  });
+  if(!items.length)throw new Error('Bu dosyada çizim bulunamadı.');
+  // hassasiyet için orijini çizimin köşesine taşı
+  const ox=minX,oy=minY;
+  const layers=[...lyrMap.values()].sort((a,b)=>a.name.localeCompare(b.name,'tr'));
+  const m={file:fileName,items,layers,ox,oy,box:[minX,minY,maxX,maxY],version:r.version_name||'',unsupported:r.unsupported_geometry_types||{}};
+  buildPaths(m); return m;
+}
+function buildPaths(m){
+  // aynı katman+renk çizgileri tek Path2D'de (hızlı çizim)
+  const groups=new Map();
+  m.items.forEach(it=>{
+    if(!(it.kind==='Line'||it.kind==='Polyline'||it.kind==='Polygon'||it.kind==='Arc'||it.kind==='Circle'||it.kind==='Box'||it.kind==='Triangle'||it.kind==='MapSheet'||(it.xy.length>1&&it.kind!=='Text')))return;
+    const key=it.L.name+'|'+it.color; let g=groups.get(key);
+    if(!g){g={L:it.L,color:it.color,p:new Path2D()};groups.set(key,g);}
+    it.xy.forEach((c,i)=>{const x=c[0]-m.ox,y=c[1]-m.oy; if(i)g.p.lineTo(x,y); else g.p.moveTo(x,y);});
+    if(it.closed&&it.xy.length>2)g.p.closePath();
+  });
+  m.paths=[...groups.values()];
+  m.dots=m.items.filter(it=>(it.kind==='Point'||it.kind==='Symbol')&&it.xy.length===1);
+  m.texts=m.items.filter(it=>it.kind==='Text'&&it.text);
+  // yakalama için tüm köşe noktaları
+  const v=[]; m.items.forEach(it=>{if(it.kind==='Text')return; it.xy.forEach(c=>v.push(c[0],c[1]));});
+  m.verts=new Float64Array(v);
+}
+
+/* ---------- görünüm ---------- */
+function resize(){
+  const r=cv.getBoundingClientRect(); dpr=Math.max(1,window.devicePixelRatio||1);
+  cv.width=Math.round(r.width*dpr); cv.height=Math.round(r.height*dpr); draw();
+}
+function fit(){
+  if(!M)return; const r=cv.getBoundingClientRect(), pad=28;
+  const w=Math.max(M.box[2]-M.box[0],1e-6), h=Math.max(M.box[3]-M.box[1],1e-6);
+  const s=Math.min((r.width-pad*2)/w,(r.height-pad*2)/h);
+  view.s=s; view.tx=(r.width-w*s)/2; view.ty=r.height-(r.height-h*s)/2; draw();
+}
+const toS=(x,y)=>[(x-M.ox)*view.s+view.tx, -(y-M.oy)*view.s+view.ty];
+const toW=(sx,sy)=>[(sx-view.tx)/view.s+M.ox, -(sy-view.ty)/view.s+M.oy];
+function draw(){
+  const W=cv.width,H=cv.height; ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,W,H);
+  if(!M)return;
+  // çizgiler
+  ctx.setTransform(dpr*view.s,0,0,-dpr*view.s,dpr*view.tx,dpr*view.ty);
+  ctx.lineWidth=1.1/view.s; ctx.lineJoin='round'; ctx.lineCap='round';
+  M.paths.forEach(g=>{if(!g.L.visible)return; ctx.strokeStyle=g.color; ctx.stroke(g.p);});
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  const r=cv.getBoundingClientRect();
+  // noktalar
+  const rad=view.s>4?2.6:1.8;
+  M.dots.forEach(it=>{if(!it.L.visible)return; const [x,y]=toS(it.xy[0][0],it.xy[0][1]); if(x<-5||y<-5||x>r.width+5||y>r.height+5)return;
+    ctx.fillStyle=it.color; ctx.beginPath(); if(it.kind==='Symbol'){ctx.rect(x-rad-.5,y-rad-.5,2*rad+1,2*rad+1);} else ctx.arc(x,y,rad,0,Math.PI*2); ctx.fill();});
+  // yazılar
+  M.texts.forEach(it=>{if(!it.L.visible)return; const px=(it.h||1)*view.s; if(px<4)return; const [x,y]=toS(it.xy[0][0],it.xy[0][1]);
+    if(x<-400||y<-200||x>r.width+400||y>r.height+200)return;
+    ctx.save(); ctx.translate(x,y); if(it.rot)ctx.rotate(-it.rot*Math.PI/180); ctx.fillStyle=it.color; ctx.font=Math.min(px,200).toFixed(1)+'px system-ui,sans-serif'; ctx.textBaseline='alphabetic'; ctx.fillText(it.text,0,0); ctx.restore();});
+  // ölçüm
+  if(meas.length){
+    ctx.strokeStyle='#ffc20e'; ctx.lineWidth=2.5; ctx.setLineDash([]); ctx.beginPath();
+    meas.forEach((p,i)=>{const [x,y]=toS(p.x,p.y); i?ctx.lineTo(x,y):ctx.moveTo(x,y);}); ctx.stroke();
+    if(meas.length>2){ctx.setLineDash([6,6]); const a=toS(meas[meas.length-1].x,meas[meas.length-1].y), b=toS(meas[0].x,meas[0].y); ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle='#ffc20e22'; ctx.beginPath(); meas.forEach((p,i)=>{const [x,y]=toS(p.x,p.y); i?ctx.lineTo(x,y):ctx.moveTo(x,y);}); ctx.closePath(); ctx.fill();}
+    meas.forEach((p,i)=>{const [x,y]=toS(p.x,p.y); ctx.fillStyle='#141412'; ctx.strokeStyle='#ffc20e'; ctx.lineWidth=2.5; ctx.beginPath(); ctx.arc(x,y,6,0,Math.PI*2); ctx.fill(); ctx.stroke();});
+  }
+  // koordinat imleci
+  if(pick){const [x,y]=toS(pick.x,pick.y); ctx.strokeStyle='#ffc20e'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(x-16,y); ctx.lineTo(x-5,y); ctx.moveTo(x+5,y); ctx.lineTo(x+16,y); ctx.moveTo(x,y-16); ctx.lineTo(x,y-5); ctx.moveTo(x,y+5); ctx.lineTo(x,y+16); ctx.stroke();
+    ctx.beginPath(); ctx.arc(x,y,9,0,Math.PI*2); ctx.stroke();}
+  updateScale(r.width);
+}
+function updateScale(w){
+  const target=w*0.22/view.s; const p=Math.pow(10,Math.floor(Math.log10(target))); const n=[1,2,5,10].find(k=>k*p>=target*0.6)*p;
+  const px=n*view.s; const e=$('scale'); e.innerHTML=`<i style="width:${px.toFixed(0)}px"></i>${n>=1000?(n/1000)+' km':n<1?n.toFixed(2)+' m':n+' m'}`;
+}
+function zoomAt(f,cx,cy){const s=Math.min(5e4,Math.max(1e-4,view.s*f)); f=s/view.s; view.tx=cx-(cx-view.tx)*f; view.ty=cy-(cy-view.ty)*f; view.s=s; draw();}
+
+/* ---------- dokunma ---------- */
+(function(){
+  const ptrs=new Map(); let moved=false, pinch=null, downAt=0, lastTap=0;
+  const rel=e=>{const r=cv.getBoundingClientRect();return [e.clientX-r.left,e.clientY-r.top];};
+  cv.addEventListener('pointerdown',e=>{if(!M)return; cv.setPointerCapture(e.pointerId); ptrs.set(e.pointerId,rel(e)); moved=false; downAt=Date.now();
+    if(ptrs.size===2){const [a,b]=[...ptrs.values()]; pinch={d:Math.hypot(a[0]-b[0],a[1]-b[1])};}});
+  cv.addEventListener('pointermove',e=>{if(!ptrs.has(e.pointerId))return; const prev=ptrs.get(e.pointerId),cur=rel(e); ptrs.set(e.pointerId,cur);
+    if(ptrs.size===2&&pinch){const [a,b]=[...ptrs.values()]; const d=Math.hypot(a[0]-b[0],a[1]-b[1]); if(pinch.d>0)zoomAt(d/pinch.d,(a[0]+b[0])/2,(a[1]+b[1])/2); pinch.d=d; moved=true; return;}
+    const dx=cur[0]-prev[0],dy=cur[1]-prev[1]; if(Math.abs(dx)+Math.abs(dy)>1.5||moved){moved=true; view.tx+=dx; view.ty+=dy; draw();}});
+  const up=e=>{const was=ptrs.has(e.pointerId); ptrs.delete(e.pointerId); if(ptrs.size<2)pinch=null;
+    if(was&&!moved&&e.type==='pointerup'&&Date.now()-downAt<500){const [x,y]=rel(e); const now=Date.now();
+      if(!mode&&now-lastTap<300){zoomAt(2,x,y); lastTap=0; return;} lastTap=now; tap(x,y);}};
+  cv.addEventListener('pointerup',up); cv.addEventListener('pointercancel',up);
+  cv.addEventListener('wheel',e=>{e.preventDefault(); const [x,y]=rel(e); zoomAt(Math.exp(-e.deltaY*0.0015),x,y);},{passive:false});
+})();
+function snap(sx,sy){
+  // ekranda 22 px içindeki en yakın köşe noktasına yapış
+  const v=M.verts, lim=22/view.s; const [wx,wy]=toW(sx,sy); let best=-1,bd=lim*lim;
+  for(let i=0;i<v.length;i+=2){const dx=v[i]-wx; if(dx>lim||dx<-lim)continue; const dy=v[i+1]-wy; if(dy>lim||dy<-lim)continue; const d=dx*dx+dy*dy; if(d<bd){bd=d;best=i;}}
+  return best>=0?{x:v[best],y:v[best+1],snapped:true}:{x:wx,y:wy,snapped:false};
+}
+function nearestPoint(p){ // aynı yerdeki adlı nokta
+  let best=null,bd=1e-6; M.dots.forEach(it=>{const d=Math.hypot(it.xy[0][0]-p.x,it.xy[0][1]-p.y); if(d<=bd){bd=d;best=it;}}); return best;
+}
+function tap(sx,sy){
+  if(mode==='coord'){pick=snap(sx,sy); pick.pt=pick.snapped?nearestPoint(pick):null; draw(); showCoord();}
+  else if(mode==='measure'){meas.push(snap(sx,sy)); draw(); showMeasure();}
+}
+
+/* ---------- modlar ---------- */
+function clearMode(){mode='x';setMode('x');}
+function setMode(m){
+  mode=mode===m?'':m; pick=null; meas=[];
+  $('bCoord').setAttribute('aria-pressed',mode==='coord'); $('bMeasure').setAttribute('aria-pressed',mode==='measure');
+  const h=$('hint'); h.hidden=!mode; h.textContent=mode==='coord'?'Koordinatını görmek istediğin yere dokun':'Ölçmek için noktalara sırayla dokun';
+  $('card').hidden=true; draw();
+}
+function showCoord(){
+  const c=$('card'); const p=pick, pt=p.pt;
+  c.innerHTML=`<div class="title">${pt&&pt.name?'Nokta '+esc(pt.name):p.snapped?'Çizim köşesi':'Seçilen yer'} ${p.snapped?'<span class="tag">yakalandı</span>':''}</div>
+    <div class="row"><span class="k">Y (sağa)</span><span class="v">${f3(p.x)}</span></div>
+    <div class="row"><span class="k">X (yukarı)</span><span class="v">${f3(p.y)}</span></div>
+    ${pt&&pt.z?`<div class="row"><span class="k">Z (kot)</span><span class="v">${f3(pt.z)}</span></div>`:''}
+    <div class="acts"><button id="cCopy" class="pri">Kopyala</button><button id="cClose">Kapat</button></div>`;
+  c.hidden=false;
+  $('cCopy').onclick=()=>copyText(`${pt&&pt.name?pt.name+' ':''}${f3(p.x)} ${f3(p.y)}${pt&&pt.z?' '+f3(pt.z):''}`);
+  $('cClose').onclick=()=>{pick=null;c.hidden=true;draw();};
+}
+function showMeasure(){
+  const c=$('card'); let tot=0; for(let i=1;i<meas.length;i++)tot+=Math.hypot(meas[i].x-meas[i-1].x,meas[i].y-meas[i-1].y);
+  const last=meas.length>1?Math.hypot(meas[meas.length-1].x-meas[meas.length-2].x,meas[meas.length-1].y-meas[meas.length-2].y):0;
+  let area=0; if(meas.length>2){for(let i=0;i<meas.length;i++){const a=meas[i],b=meas[(i+1)%meas.length]; area+=(a.x-M.ox)*(b.y-M.oy)-(b.x-M.ox)*(a.y-M.oy);} area=Math.abs(area)/2;}
+  const per=meas.length>2?tot+Math.hypot(meas[0].x-meas[meas.length-1].x,meas[0].y-meas[meas.length-1].y):0;
+  c.innerHTML=`<div class="title">Ölçüm <span class="tag">${meas.length} nokta</span></div>
+    ${meas.length<2?'<div class="row"><span class="k">Bir sonraki noktaya dokun</span></div>':''}
+    ${meas.length>1?`<div class="row"><span class="k">Son parça</span><span class="v">${f3(last)} m</span></div><div class="row"><span class="k">Toplam uzunluk</span><span class="v">${f3(tot)} m</span></div>`:''}
+    ${meas.length>2?`<div class="row"><span class="k">Alan</span><span class="v">${area.toFixed(2)} m²</span></div><div class="row"><span class="k">Çevre (kapalı)</span><span class="v">${f3(per)} m</span></div>`:''}
+    <div class="acts"><button id="mUndo">Geri al</button><button id="mClear">Temizle</button>${meas.length>1?'<button id="mCopy" class="pri">Kopyala</button>':''}</div>`;
+  c.hidden=false;
+  $('mUndo').onclick=()=>{meas.pop(); draw(); meas.length?showMeasure():(c.hidden=true);};
+  $('mClear').onclick=()=>{meas=[]; draw(); c.hidden=true;};
+  if($('mCopy'))$('mCopy').onclick=()=>copyText(`Uzunluk: ${f3(tot)} m`+(meas.length>2?`\nAlan: ${area.toFixed(2)} m²\nÇevre: ${f3(per)} m`:''));
+}
+function copyText(t){
+  if(AB&&AB.copy){AB.copy(t);toast('Kopyalandı');return;}
+  try{navigator.clipboard.writeText(t).then(()=>toast('Kopyalandı'),()=>toast(t));}catch(e){toast(t);}
+}
+
+/* ---------- alt pencereler ---------- */
+function sheet(title,html){$('shTitle').textContent=title;$('shBody').innerHTML=html;$('sheet').hidden=false;}
+function closeSheet(){$('sheet').hidden=true;}
+$('shClose').onclick=closeSheet; $('sheet').addEventListener('click',e=>{if(e.target===$('sheet'))closeSheet();});
+function openLayers(){
+  const rows=M.layers.map((L,i)=>`<button class="lyr" role="switch" aria-checked="${L.visible}" data-i="${i}"><span class="dot" style="background:${L.color}"></span><span class="nm">${esc(L.name)}</span><span class="cnt">${L.count}</span><span class="sw"></span></button>`).join('');
+  sheet('Katmanlar ('+M.layers.length+')',`<div class="two"><button id="lAll">Hepsini göster</button><button id="lNone">Hepsini gizle</button></div>${rows}`);
+  $('shBody').onclick=e=>{const b=e.target.closest('.lyr'); if(b){const L=M.layers[+b.dataset.i]; L.visible=!L.visible; b.setAttribute('aria-checked',L.visible); draw();}
+    if(e.target.id==='lAll'||e.target.id==='lNone'){const v=e.target.id==='lAll'; M.layers.forEach(L=>L.visible=v); openLayers(); draw();}};
+}
+function exportPoints(onlyVisible){
+  let n=0; return M.dots.filter(it=>!onlyVisible||it.L.visible).map(it=>{n++; return {n:(it.name||it.text||('N'+n)).trim().replace(/\s+/g,'_'),y:it.xy[0][0],x:it.xy[0][1],z:it.z||0};});
+}
+function openExport(){
+  const all=exportPoints(false).length;
+  sheet('Dışa aktar',`<p class="note">Çizimdeki <b>${all}</b> nokta, nokta adları ve kotlarıyla birlikte dosyaya yazılır.</p>
+    <label class="chk"><input type="checkbox" id="xVis" checked> Sadece görünen katmanlar</label>
+    <div class="fmt">
+      <button data-f="ncn"><b>NCN</b><span>Netcad nokta dosyası</span></button>
+      <button data-f="gsi"><b>GSI</b><span>Leica total station (GSI-16)</span></button>
+      <button data-f="xlsx"><b>Excel</b><span>Nokta, Y, X, Z sütunları</span></button>
+      <button data-f="csv"><b>CSV</b><span>Excel'de ayrı hücreler</span></button>
+    </div>`);
+  $('shBody').querySelector('.fmt').onclick=e=>{const b=e.target.closest('button[data-f]'); if(!b)return;
+    const pts=exportPoints($('xVis').checked); if(!pts.length){toast('Aktarılacak nokta yok.');return;}
+    const base=(M.file||'pafta').replace(/\.[^.]+$/,'').replace(/[\\/:*?"<>|]/g,'_');
+    const f=b.dataset.f;
+    if(f==='ncn')saveText(base+'.NCN',pts.map(p=>`${p.n} ${p.y.toFixed(3)} ${p.x.toFixed(3)} ${p.z.toFixed(3)}`).join('\r\n')+'\r\n');
+    if(f==='gsi')saveText(base+'.GSI',buildGSI(pts).join('\r\n')+'\r\n');
+    if(f==='csv')saveText(base+'.csv','﻿'+buildCSV(pts).join('\r\n')+'\r\n');
+    if(f==='xlsx')saveBytes(base+'.xlsx',buildXLSX(pts),'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  };
+}
+function openAbout(){
+  sheet('Pafta hakkında',`<div class="about">
+    <p><b>Pafta</b>, NCZ çizimlerini telefonda açmak, koordinat okumak ve ölçüm yapmak için hazırlanmış ücretsiz bir uygulamadır. Dosyalarınız cihazınızda açılır, hiçbir yere gönderilmez.</p>
+    <p>Geliştiren: <b>Egemen Çalıkoğlu</b></p>
+    <p>Pafta açık kaynaklıdır ve GNU GPL (sürüm 2 veya sonrası) lisansıyla dağıtılır. NCZ okuma kısmı, Erdinç Örsan Ünal'ın GPL lisanslı NCZ okuyucusu temel alınarak hazırlanmıştır.</p>
+    <p class="note">Netcad, Netcad Yazılım A.Ş.'nin tescilli markasıdır. Pafta, Netcad Yazılım A.Ş. ile bağlantılı değildir.</p>
+    ${M?`<p class="note">Açık dosya: ${esc(M.file)}${M.version?' · Netcad '+esc(M.version):''} · ${M.items.length} nesne</p>`:''}
+  </div>`);
+}
+
+/* ---------- dışa aktarma biçimleri ---------- */
+function buildGSI(pts){ // GSI-16, mm
+  const val=v=>(v<0?'-':'+')+String(Math.round(Math.abs(v)*1000)).padStart(16,'0').slice(-16);
+  return pts.map((p,i)=>{const nm=p.n.length>16?p.n.slice(-16):p.n;
+    return '*11'+String((i+1)%10000).padStart(4,'0')+'+'+nm.padStart(16,'0')+' 81..00'+val(p.y)+' 82..00'+val(p.x)+' 83..00'+val(p.z)+' ';});
+}
+function buildCSV(pts){const c=v=>v.toFixed(3).replace('.',','); const q=t=>/[;"\n]/.test(t)?'"'+t.replace(/"/g,'""')+'"':t;
+  return ['Nokta No;Y (Sağa);X (Yukarı);Z (Kot)',...pts.map(p=>[q(p.n),c(p.y),c(p.x),c(p.z)].join(';'))];}
+const CRC=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0;}return t;})();
+function crc32(b){let c=0xFFFFFFFF;for(let i=0;i<b.length;i++)c=CRC[(c^b[i])&255]^(c>>>8);return (c^0xFFFFFFFF)>>>0;}
+function zip(files){
+  const enc=new TextEncoder(),parts=[],cen=[];let off=0;
+  files.forEach(([name,text])=>{const nb=enc.encode(name),db=enc.encode(text),crc=crc32(db);
+    const h=new DataView(new ArrayBuffer(30));h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint16(6,0x0800,true);h.setUint32(14,crc,true);h.setUint32(18,db.length,true);h.setUint32(22,db.length,true);h.setUint16(26,nb.length,true);
+    parts.push(new Uint8Array(h.buffer),nb,db);
+    const c=new DataView(new ArrayBuffer(46));c.setUint32(0,0x02014b50,true);c.setUint16(4,20,true);c.setUint16(6,20,true);c.setUint16(8,0x0800,true);c.setUint32(16,crc,true);c.setUint32(20,db.length,true);c.setUint32(24,db.length,true);c.setUint16(28,nb.length,true);c.setUint32(42,off,true);
+    cen.push(new Uint8Array(c.buffer),nb);off+=30+nb.length+db.length;});
+  const cl=cen.reduce((a,b)=>a+b.length,0),e=new DataView(new ArrayBuffer(22));
+  e.setUint32(0,0x06054b50,true);e.setUint16(8,files.length,true);e.setUint16(10,files.length,true);e.setUint32(12,cl,true);e.setUint32(16,off,true);
+  const all=[...parts,...cen,new Uint8Array(e.buffer)],out=new Uint8Array(all.reduce((a,b)=>a+b.length,0));let o=0;all.forEach(b=>{out.set(b,o);o+=b.length;});return out;
+}
+function buildXLSX(pts){
+  const x=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const str=(r,c,t)=>`<c r="${c}${r}" t="inlineStr"${r===1?' s="1"':''}><is><t>${x(t)}</t></is></c>`;
+  const num=(r,c,v)=>v==null||!isFinite(v)?'':`<c r="${c}${r}" s="2"><v>${+v.toFixed(4)}</v></c>`;
+  let rows=`<row r="1">${str(1,'A','Nokta No')}${str(1,'B','Y (Sağa)')}${str(1,'C','X (Yukarı)')}${str(1,'D','Z (Kot)')}</row>`;
+  pts.forEach((p,i)=>{const r=i+2;rows+=`<row r="${r}">${str(r,'A',p.n)}${num(r,'B',p.y)}${num(r,'C',p.x)}${num(r,'D',p.z)}</row>`;});
+  const X='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>', NS='http://schemas.openxmlformats.org';
+  return zip([
+    ['[Content_Types].xml',X+`<Types xmlns="${NS}/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>`],
+    ['_rels/.rels',X+`<Relationships xmlns="${NS}/package/2006/relationships"><Relationship Id="rId1" Type="${NS}/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`],
+    ['xl/workbook.xml',X+`<workbook xmlns="${NS}/spreadsheetml/2006/main" xmlns:r="${NS}/officeDocument/2006/relationships"><sheets><sheet name="Noktalar" sheetId="1" r:id="rId1"/></sheets></workbook>`],
+    ['xl/_rels/workbook.xml.rels',X+`<Relationships xmlns="${NS}/package/2006/relationships"><Relationship Id="rId1" Type="${NS}/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="${NS}/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`],
+    ['xl/worksheets/sheet1.xml',X+`<worksheet xmlns="${NS}/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols><col min="1" max="1" width="16" customWidth="1"/><col min="2" max="4" width="15" customWidth="1"/></cols><sheetData>${rows}</sheetData></worksheet>`],
+    ['xl/styles.xml',X+`<styleSheet xmlns="${NS}/spreadsheetml/2006/main"><numFmts count="1"><numFmt numFmtId="164" formatCode="0.000"/></numFmts><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="1"><border/></borders><cellStyleXfs count="1"><xf/></cellStyleXfs><cellXfs count="3"><xf/><xf fontId="1" applyFont="1"/><xf numFmtId="164" applyNumberFormat="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`]]);
+}
+function saveText(name,data){
+  if(AB){AB.saveFile(name,data);return;}
+  download(new Blob([data],{type:'text/plain'}),name);
+}
+function saveBytes(name,bytes,mime){
+  if(AB&&AB.saveFileBase64){let b='';for(let i=0;i<bytes.length;i+=0x8000)b+=String.fromCharCode.apply(null,bytes.subarray(i,i+0x8000));AB.saveFileBase64(name,btoa(b));return;}
+  download(new Blob([bytes],{type:mime}),name);
+}
+function download(blob,name){try{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);toast(name+' indirildi');}catch(e){toast('İndirilemedi');}}
+
+/* ---------- dosya açma ---------- */
+function loadBytes(bytes,name){
+  $('busy').hidden=false;
+  setTimeout(()=>{
+    try{
+      const r=parseNCZ(bytes); M=buildModel(r,name);
+      $('empty').hidden=true; $('fabs').hidden=false; $('scale').hidden=false; $('fname').textContent=name;
+      ['bLayers','bCoord','bMeasure','bExport'].forEach(id=>$(id).disabled=false);
+      clearMode();
+      resize(); fit();
+      const un=Object.values(M.unsupported).reduce((a,b)=>a+b,0);
+      toast(M.items.length+' nesne · '+M.layers.length+' katman'+(un?' · '+un+' nesne gösterilemedi':''));
+    }catch(e){toast('Dosya açılamadı: '+(e&&e.message?e.message:'bilinmeyen hata'));}
+    $('busy').hidden=true;
+  },30);
+}
+function openFile(){ if(AB&&AB.pickNcz)AB.pickNcz(); else $('fileIn').click(); }
+$('fileIn').addEventListener('change',async()=>{const f=$('fileIn').files[0]; if(!f)return; const buf=new Uint8Array(await f.arrayBuffer()); $('fileIn').value=''; loadBytes(buf,f.name);});
+window.onNativeFile=function(name,b64){ // Android'den gelen dosya
+  try{const s=atob(b64),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);loadBytes(u,name);}catch(e){toast('Dosya okunamadı');}
+};
+window.__toast=toast;
+$('openBtn').onclick=openFile; $('emptyOpen').onclick=openFile;
+$('infoBtn').onclick=openAbout;
+$('bLayers').onclick=openLayers; $('bExport').onclick=openExport;
+$('bCoord').onclick=()=>setMode('coord'); $('bMeasure').onclick=()=>setMode('measure');
+$('zFit').onclick=fit;
+$('zIn').onclick=()=>{const r=cv.getBoundingClientRect();zoomAt(1.6,r.width/2,r.height/2);};
+$('zOut').onclick=()=>{const r=cv.getBoundingClientRect();zoomAt(1/1.6,r.width/2,r.height/2);};
+window.addEventListener('resize',()=>{clearTimeout(resize.t);resize.t=setTimeout(()=>{const r=cv.getBoundingClientRect();const keep=M&&cv.width;resize();if(M&&!keep)fit();},120);});
+
+/* ---------- örnek çizim (uydurma veri) ---------- */
+$('demoBtn').onclick=()=>{
+  const E=[],L=[],C=[];
+  const lay=(n,c)=>{L.push(n);C.push(c);};
+  lay('PARSEL',0xFFFFD23F); lay('BINA',0xFF4FD1E8); lay('YOL',0xFF9A9A9A); lay('NOKTA',0xFFFFFFFF); lay('KOT',0xFFFF5A5A); lay('YAZI',0xFF7BD88F); lay('DUVAR',0xFFFF9F43);
+  const line=(layer,pts,closed)=>E.push({geometry_kind:closed?'Polygon':'Line',layer_name:layer,layer_code:L.indexOf(layer),color_argb:null,is_closed:!!closed,coordinates:pts.map(([x,y])=>({x,y,z:0}))});
+  const pt=(layer,name,x,y,z)=>E.push({geometry_kind:'Point',layer_name:layer,layer_code:L.indexOf(layer),color_argb:null,name,coordinates:[{x,y,z}]});
+  const tx=(layer,t,x,y,h,rot)=>E.push({geometry_kind:'Text',layer_name:layer,layer_code:L.indexOf(layer),color_argb:null,label_text:t,text_height:h,rotation_degrees:rot||0,coordinates:[{x,y,z:0}]});
+  const X0=420800,Y0=4539600;
+  // yol
+  line('YOL',[[X0-20,Y0-12],[X0+140,Y0-12]]); line('YOL',[[X0-20,Y0-2],[X0+140,Y0-2]]);
+  tx('YAZI','ÖRNEK SOKAK',X0+40,Y0-9,2.2);
+  // parseller
+  const P=[[0,0],[40,0],[80,0],[120,0]];
+  P.forEach(([dx],i)=>{line('PARSEL',[[X0+dx,Y0],[X0+dx+38,Y0],[X0+dx+38,Y0+45],[X0+dx,Y0+45]],true); tx('YAZI',String(101+i),X0+dx+15,Y0+38,3);
+    line('BINA',[[X0+dx+6,Y0+8],[X0+dx+30,Y0+8],[X0+dx+30,Y0+26],[X0+dx+6,Y0+26]],true);
+    line('DUVAR',[[X0+dx,Y0+0.6],[X0+dx+38,Y0+0.6]]);
+    [[0,0],[38,0],[38,45],[0,45]].forEach(([a,b],k)=>pt('NOKTA','P'+(i*4+k+1),X0+dx+a,Y0+b,12+((i+k)%3)*0.35));
+  });
+  for(let i=0;i<24;i++){const x=X0+4+(i%8)*16+((i*7)%5),y=Y0+4+Math.floor(i/8)*15+((i*3)%4),z=12.4+((i*37)%19)/10;
+    pt('KOT','K'+(i+1),x,y,z); tx('KOT',z.toFixed(2),x+0.6,y+0.6,1.2);}
+  tx('YAZI','ÖRNEK PAFTA · UYDURMA VERİ',X0,Y0+52,3.2);
+  loadBytesModel({entities:E,layer_names:L,layer_colors:C,version_name:'',unsupported_geometry_types:{}},'ornek-pafta.NCZ');
+};
+function loadBytesModel(r,name){ // örnek için ayrıştırıcıyı atla
+  M=buildModel(r,name); $('empty').hidden=true; $('fabs').hidden=false; $('scale').hidden=false; $('fname').textContent=name+' (örnek)';
+  ['bLayers','bCoord','bMeasure','bExport'].forEach(id=>$(id).disabled=false); clearMode(); resize(); fit();
+}
+resize();
+</script>
+</body>
+</html>
