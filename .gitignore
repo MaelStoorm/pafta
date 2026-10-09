@@ -7,3 +7,7 @@ local.properties
 .idea/
 *.iml
 .DS_Store
+ios/*.xcodeproj/
+ios/gen/
+ios/*/Info.plist
+__pycache__/
