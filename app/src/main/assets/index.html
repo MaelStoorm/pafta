@@ -385,7 +385,8 @@ function openAbout(){
   sheet('Pafta hakkında',`<div class="about">
     <p><b>Pafta</b>, NCZ çizimlerini telefonda açmak, koordinat okumak ve ölçüm yapmak için hazırlanmış ücretsiz bir uygulamadır. Dosyalarınız cihazınızda açılır, hiçbir yere gönderilmez.</p>
     <p>Geliştiren: <b>Egemen Çalıkoğlu</b></p>
-    <p>Pafta açık kaynaklıdır ve GNU GPL (sürüm 2 veya sonrası) lisansıyla dağıtılır. NCZ okuma kısmı, Erdinç Örsan Ünal'ın GPL lisanslı NCZ okuyucusu temel alınarak hazırlanmıştır.</p>
+    <p>Pafta açık kaynaklıdır ve GNU GPL (sürüm 2 veya sonrası) lisansıyla dağıtılır. Kaynak kod: github.com/MaelStoorm/pafta</p>
+    <p><b>Lisanslar</b><br>NCZ okuma kısmı, <b>Jeomatik NCZ Reader</b>'dan JavaScript'e aktarılmıştır.<br>Jeomatik NCZ Reader · Copyright © 2026 Erdinç Örsan ÜNAL · GNU GPL sürüm 2 veya sonrası<br>Kaynak: github.com/erdincunal/Jeomatik-NCZ-Reader<br>App Store dağıtımı, telif sahibinin verdiği ek izinle yapılmaktadır. Pafta, Jeomatik tarafından yayımlanmış ya da resmi olarak desteklenen bir uygulama değildir.</p>
     <p class="note">Netcad, Netcad Yazılım A.Ş.'nin tescilli markasıdır. Pafta, Netcad Yazılım A.Ş. ile bağlantılı değildir.</p>
     ${M?`<p class="note">Açık dosya: ${esc(M.file)}${M.version?' · Netcad '+esc(M.version):''} · ${M.items.length} nesne</p>`:''}
   </div>`);

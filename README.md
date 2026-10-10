@@ -2,7 +2,9 @@
 
 NCZ çizimlerini telefonda açmak, koordinat okumak, mesafe ve alan ölçmek ve noktaları NCN, GSI, Excel ya da CSV olarak dışa aktarmak için ücretsiz bir uygulama.
 
-NCZ okuma kısmı, Erdinç Örsan Ünal'ın GPL lisanslı NCZ okuyucusu temel alınarak JavaScript'e aktarılmıştır.
+NCZ okuma kısmı (`ncz.js`), Erdinç Örsan ÜNAL'ın GPL lisanslı [Jeomatik NCZ Reader](https://github.com/erdincunal/Jeomatik-NCZ-Reader) projesindeki `ncz_pure.py` dosyasından JavaScript'e aktarılarak türetilmiştir (Copyright © 2026 Erdinç Örsan ÜNAL, GPL-2.0-or-later).
+
+iOS sürümünün Apple App Store üzerinden dağıtılması için telif sahibinden GPL'e ek bir dağıtım izni alınmıştır (10 Ekim 2026). İznin metni: [docs/ios-ek-izin.md](docs/ios-ek-izin.md). Bu izin GPL lisansını ya da başkalarının bu lisanstaki haklarını değiştirmez. Pafta, Jeomatik tarafından yayımlanmış ya da resmi olarak desteklenen bir uygulama değildir.
 
 Netcad, Netcad Yazılım A.Ş.'nin tescilli markasıdır. Pafta, Netcad Yazılım A.Ş. ile bağlantılı değildir.
 
