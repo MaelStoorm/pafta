@@ -1,0 +1,4 @@
+getpwuid_r did not find a match for uid 501
+Timestamp               Ty Process[PID:TID]
+2026-10-10 05:29:17.189 Df Pafta[9830:77ee] (Foundation) [kabuk] hazır: app://site/index.html Pafta
+2026-10-10 05:30:00.487 Df log[11474:0] [com.apple.log:] log run noninteractively, parent: 1733 (launchd_sim), args: 'log' 'show' '--last' '3m' '--style' 'compact' '--predicate' 'eventMessage CONTAINS "[kabuk]"'
