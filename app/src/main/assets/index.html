@@ -58,8 +58,8 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;displa
 .tag{font-size:12px;font-weight:700;background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:2px 8px;color:var(--muted)}
 
 /* alt bar */
-.bar{display:grid;grid-template-columns:repeat(4,1fr);background:var(--panel);border-top:1px solid var(--line);padding:6px 6px calc(6px + var(--safe-b));flex:none;z-index:5}
-.bar button{border:0;background:transparent;border-radius:12px;padding:6px 2px;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:13px;font-weight:700;color:var(--muted)}
+.bar{display:grid;grid-template-columns:repeat(5,1fr);background:var(--panel);border-top:1px solid var(--line);padding:6px 6px calc(6px + var(--safe-b));flex:none;z-index:5}
+.bar button{border:0;background:transparent;border-radius:12px;padding:6px 1px;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:12px;font-weight:700;color:var(--muted)}
 .bar button svg{width:26px;height:26px}
 .bar button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
 .bar button:disabled{opacity:.35}
@@ -93,6 +93,30 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;displa
 .note{color:var(--muted);font-size:13.5px;line-height:1.5;margin:8px 0}
 .about p{line-height:1.55;font-size:14.5px;margin:8px 0}
 .toast{position:fixed;left:50%;bottom:calc(90px + var(--safe-b));transform:translateX(-50%);background:#000e;color:#fff;border:1px solid var(--line);padding:10px 16px;border-radius:12px;font-size:14px;font-weight:600;z-index:30;max-width:90vw;text-align:center}
+/* nokta girme ve hesap */
+.pform{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.pform .full{grid-column:1/-1}
+.inp{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px 12px;color:var(--ink);font:600 16px ui-monospace,Menlo,monospace;width:100%;min-width:0;user-select:text;-webkit-user-select:text}
+.inp:focus{outline:2px solid var(--hl);outline-offset:0}
+textarea.inp{min-height:96px;resize:vertical;font-size:14px}
+.btnp{border:0;border-radius:12px;padding:13px;font-weight:800;font-size:16px;background:var(--accent);color:var(--accent-ink)}
+.btng{border:1px solid var(--line);border-radius:12px;padding:12px;font-weight:700;font-size:15px;background:var(--panel2)}
+.btng.danger{color:var(--err)}
+.sec{margin:14px 0 4px;font-size:13px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.prow{display:flex;align-items:center;gap:10px;padding:9px 2px;border-bottom:1px solid var(--line)}
+.prow input{width:22px;height:22px;accent-color:var(--hl);flex:none}
+.prow .pc{flex:1;min-width:0;font:600 13px ui-monospace,Menlo,monospace;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.prow .pc b{font:700 15px system-ui,sans-serif;color:var(--ink);margin-right:6px}
+.prow .del{border:0;background:var(--panel2);width:34px;height:34px;border-radius:50%;font-size:18px;color:var(--muted);flex:none}
+details.paste{margin:4px 0 8px}
+details.paste summary{cursor:pointer;color:var(--hl);font-weight:700;font-size:14px;padding:6px 0}
+.rrow{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:7px 0;border-bottom:1px dashed var(--line)}
+.rrow .k{color:var(--muted);font-size:14px}
+.rrow .v{font:700 17px ui-monospace,Menlo,monospace;text-align:right}
+.rrow .v.cut{color:#ff9f43}.rrow .v.fill{color:#4fd1e8}
+.refrow{display:flex;align-items:center;gap:10px;margin:8px 0}
+.refrow label{flex:1;font-size:14px;color:var(--muted)}
+.refrow .inp{width:140px;flex:none}
 .busy{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#000a;font-weight:700;font-size:16px}
 </style>
 </head>
@@ -116,6 +140,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;displa
     <h1>NCZ çizimini aç</h1>
     <p>Netcad'de çizilmiş .NCZ dosyalarını telefonunda görüntüle, koordinat oku ve ölçüm yap.</p>
     <button class="bigbtn" id="emptyOpen">Dosya aç</button>
+    <button class="ghost" id="newBtn">Nokta gir, çiz, hesapla</button>
     <button class="ghost" id="demoBtn">Örnek çizimi göster</button>
   </div>
   <div class="hint" id="hint" hidden></div>
@@ -137,6 +162,8 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;displa
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="7"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>Koordinat</button>
   <button id="bMeasure" aria-pressed="false" disabled>
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="8" width="20" height="8" rx="1.5" transform="rotate(-30 12 12)"/><path d="M7.5 11.5 9 14M11 9.5l1.5 2.5M14.5 7.5 16 10" transform="rotate(0)"/></svg>Ölç</button>
+  <button id="bPoints">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 19 9 7l8 3-3 9z"/><circle cx="5" cy="19" r="2" fill="currentColor"/><circle cx="9" cy="7" r="2" fill="currentColor"/><circle cx="17" cy="10" r="2" fill="currentColor"/><path d="M19 15v6M16 18h6"/></svg>Noktalar</button>
   <button id="bExport" disabled>
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 17v3h16v-3"/></svg>Dışa aktar</button>
 </nav>
@@ -225,9 +252,10 @@ function resize(){
 }
 function fit(){
   if(!M)return; const r=cv.getBoundingClientRect(), pad=28;
-  const w=Math.max(M.box[2]-M.box[0],1e-6), h=Math.max(M.box[3]-M.box[1],1e-6);
+  const w=Math.max(M.box[2]-M.box[0],10), h=Math.max(M.box[3]-M.box[1],10);
   const s=Math.min((r.width-pad*2)/w,(r.height-pad*2)/h);
-  view.s=s; view.tx=(r.width-w*s)/2; view.ty=r.height-(r.height-h*s)/2; draw();
+  const cx=(M.box[0]+M.box[2])/2-M.ox, cy=(M.box[1]+M.box[3])/2-M.oy;
+  view.s=s; view.tx=r.width/2-cx*s; view.ty=r.height/2+cy*s; draw();
 }
 const toS=(x,y)=>[(x-M.ox)*view.s+view.tx, -(y-M.oy)*view.s+view.ty];
 const toW=(sx,sy)=>[(sx-view.tx)/view.s+M.ox, -(sy-view.ty)/view.s+M.oy];
@@ -259,6 +287,17 @@ function draw(){
   M.texts.forEach(it=>{if(!it.L.visible)return; const px=(it.h||1)*view.s; if(px<4)return; const [x,y]=toS(it.xy[0][0],it.xy[0][1]);
     if(x<-400||y<-200||x>r.width+400||y>r.height+200)return;
     ctx.save(); ctx.translate(x,y); if(it.rot)ctx.rotate(-it.rot*Math.PI/180); ctx.fillStyle=it.color; ctx.font=Math.min(px,200).toFixed(1)+'px system-ui,sans-serif'; ctx.textBaseline='alphabetic'; ctx.fillText(it.text,0,0); ctx.restore();});
+  // elle çizilen şekiller
+  if(UL.visible)US.forEach(sh=>{if(sh.pts.length<2)return; ctx.strokeStyle=UL.color; ctx.lineWidth=2.2; ctx.beginPath();
+    sh.pts.forEach((p,i)=>{const [x,y]=toS(p.y,p.x); i?ctx.lineTo(x,y):ctx.moveTo(x,y);}); if(sh.closed)ctx.closePath(); ctx.stroke();
+    if(sh.closed){ctx.fillStyle='rgba(255,210,63,.10)'; ctx.fill();}});
+  // üçgen ağı (hacim)
+  if(TIN){ctx.strokeStyle='rgba(63,208,143,.75)'; ctx.lineWidth=1; ctx.beginPath();
+    TIN.tris.forEach(t=>{const a=toS(TIN.p[t[0]].y,TIN.p[t[0]].x),b=toS(TIN.p[t[1]].y,TIN.p[t[1]].x),c=toS(TIN.p[t[2]].y,TIN.p[t[2]].x); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.lineTo(c[0],c[1]); ctx.closePath();}); ctx.stroke();}
+  // çizim modu
+  if(drw.length){ctx.strokeStyle='#ffd23f'; ctx.lineWidth=3; ctx.beginPath(); drw.forEach((p,i)=>{const [x,y]=toS(p.y,p.x); i?ctx.lineTo(x,y):ctx.moveTo(x,y);}); ctx.stroke();
+    if(drw.length>2){ctx.setLineDash([6,6]); const a=toS(drw[drw.length-1].y,drw[drw.length-1].x),b=toS(drw[0].y,drw[0].x); ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.stroke(); ctx.setLineDash([]);}
+    drw.forEach((p,i)=>{const [x,y]=toS(p.y,p.x); ctx.fillStyle='#050806'; ctx.strokeStyle='#ffd23f'; ctx.lineWidth=2.5; ctx.beginPath(); ctx.arc(x,y,i?6:8,0,Math.PI*2); ctx.fill(); ctx.stroke();});}
   // ölçüm
   if(meas.length){
     ctx.strokeStyle='#3fd08f'; ctx.lineWidth=2.5; ctx.setLineDash([]); ctx.beginPath();
@@ -306,15 +345,17 @@ function nearestPoint(p){ // aynı yerdeki adlı nokta
 function tap(sx,sy){
   if(mode==='coord'){pick=snap(sx,sy); pick.pt=pick.snapped?nearestPoint(pick):null; draw(); showCoord();}
   else if(mode==='measure'){meas.push(snap(sx,sy)); draw(); showMeasure();}
+  else if(mode==='draw'){const q=snap(sx,sy); if(!q.snapped){toast('Bir noktaya dokun');return;} const pt=nearestPoint(q); drw.push({n:pt&&pt.name?pt.name.trim():'',y:q.x,x:q.y,z:pt&&pt.z!=null?pt.z:null}); draw(); showDraw();}
 }
 
 /* ---------- modlar ---------- */
 function clearMode(){mode='x';setMode('x');}
 function setMode(m){
-  mode=mode===m?'':m; pick=null; meas=[];
+  mode=mode===m?'':m; pick=null; meas=[]; drw=[];
   $('bCoord').setAttribute('aria-pressed',mode==='coord'); $('bMeasure').setAttribute('aria-pressed',mode==='measure');
-  const h=$('hint'); h.hidden=!mode; h.textContent=mode==='coord'?'Koordinatını görmek istediğin yere dokun':'Ölçmek için noktalara sırayla dokun';
-  $('card').hidden=true; draw();
+  if(mode)TIN=null;
+  const h=$('hint'); h.hidden=!mode; h.textContent=mode==='coord'?'Koordinatını görmek istediğin yere dokun':mode==='draw'?'Birleştirmek istediğin noktalara sırayla dokun':'Ölçmek için noktalara sırayla dokun';
+  $('card').hidden=true; if(mode==='draw')showDraw(); draw();
 }
 function showCoord(){
   const c=$('card'); const p=pick, pt=p.pt;
@@ -322,10 +363,11 @@ function showCoord(){
     <div class="row"><span class="k">Y (sağa)</span><span class="v">${f3(p.x)}</span></div>
     <div class="row"><span class="k">X (yukarı)</span><span class="v">${f3(p.y)}</span></div>
     ${pt&&pt.z?`<div class="row"><span class="k">Z (kot)</span><span class="v">${f3(pt.z)}</span></div>`:''}
-    <div class="acts"><button id="cCopy" class="pri">Kopyala</button><button id="cClose">Kapat</button></div>`;
+    <div class="acts"><button id="cCopy" class="pri">Kopyala</button>${pt&&pt.L===UL?'':'<button id="cAdd">Nokta ekle</button>'}<button id="cClose">Kapat</button></div>`;
   c.hidden=false;
   $('cCopy').onclick=()=>copyText(`${pt&&pt.name?pt.name+' ':''}${f3(p.x)} ${f3(p.y)}${pt&&pt.z?' '+f3(pt.z):''}`);
   $('cClose').onclick=()=>{pick=null;c.hidden=true;draw();};
+  if($('cAdd'))$('cAdd').onclick=()=>{const n=addPoint({n:pt&&pt.name?pt.name.trim():'',y:p.x,x:p.y,z:pt&&pt.z?pt.z:null}); toast(n+' noktalarına eklendi');};
 }
 function showMeasure(){
   const c=$('card'); let tot=0; for(let i=1;i<meas.length;i++)tot+=Math.hypot(meas[i].x-meas[i-1].x,meas[i].y-meas[i-1].y);
@@ -336,10 +378,13 @@ function showMeasure(){
     ${meas.length<2?'<div class="row"><span class="k">Bir sonraki noktaya dokun</span></div>':''}
     ${meas.length>1?`<div class="row"><span class="k">Son parça</span><span class="v">${f3(last)} m</span></div><div class="row"><span class="k">Toplam uzunluk</span><span class="v">${f3(tot)} m</span></div>`:''}
     ${meas.length>2?`<div class="row"><span class="k">Alan</span><span class="v">${area.toFixed(2)} m²</span></div><div class="row"><span class="k">Çevre (kapalı)</span><span class="v">${f3(per)} m</span></div>`:''}
-    <div class="acts"><button id="mUndo">Geri al</button><button id="mClear">Temizle</button>${meas.length>1?'<button id="mCopy" class="pri">Kopyala</button>':''}</div>`;
+    <div class="acts"><button id="mUndo">Geri al</button><button id="mClear">Temizle</button>${meas.length>2?'<button id="mVol">Hacim</button>':''}${meas.length>1?'<button id="mCopy" class="pri">Kopyala</button>':''}</div>`;
   c.hidden=false;
   $('mUndo').onclick=()=>{meas.pop(); draw(); meas.length?showMeasure():(c.hidden=true);};
   $('mClear').onclick=()=>{meas=[]; draw(); c.hidden=true;};
+  if($('mVol'))$('mVol').onclick=()=>{
+    const poly=meas.map(p=>{const pt=p.snapped?nearestPoint(p):null; return {n:pt&&pt.name?pt.name.trim():'',y:p.x,x:p.y,z:pt&&pt.z?pt.z:null};});
+    openCalc('Ölçülen alan',poly,zpFor(poly));};
   if($('mCopy'))$('mCopy').onclick=()=>copyText(`Uzunluk: ${f3(tot)} m`+(meas.length>2?`\nAlan: ${area.toFixed(2)} m²\nÇevre: ${f3(per)} m`:''));
 }
 function copyText(t){
@@ -438,12 +483,174 @@ function saveBytes(name,bytes,mime){
 }
 function download(blob,name){try{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);toast(name+' indirildi');}catch(e){toast('İndirilemedi');}}
 
+/* ---------- girilen noktalar ve elle çizim ---------- */
+// Noktalar ve çizimler telefonda saklanır; açılan her çizimin üstünde görünür.
+const UL={name:'Girilen noktalar',color:'#ffd23f',count:0,visible:true,points:0,user:true};
+let UP=[], US=[], drw=[], TIN=null;
+try{UP=JSON.parse(localStorage.getItem('pafta.noktalar')||'[]'); US=JSON.parse(localStorage.getItem('pafta.cizimler')||'[]');}catch(e){UP=[];US=[];}
+function saveUser(){try{localStorage.setItem('pafta.noktalar',JSON.stringify(UP));localStorage.setItem('pafta.cizimler',JSON.stringify(US));}catch(e){}}
+const num=v=>{v=String(v==null?'':v).trim().replace(/\s/g,''); if(!v)return NaN; if(/,/.test(v)&&!/\./.test(v))v=v.replace(',','.'); return Number(v);};
+function emptyModel(){return {file:'Yeni proje',items:[],layers:[],ox:0,oy:0,box:[0,0,10,10],version:'',unsupported:{},empty:true};}
+function syncUser(){
+  if(!M)M=emptyModel();
+  M.items=M.items.filter(it=>!it.user); M.layers=M.layers.filter(L=>!L.user);
+  UL.count=UL.points=UP.length;
+  if(UP.length||US.length)M.layers.unshift(UL);
+  UP.forEach(p=>M.items.push({kind:'Point',L:UL,color:UL.color,xy:[[p.y,p.x]],z:p.z,closed:false,text:'',name:p.n,h:0,rot:0,user:true}));
+  let a=Infinity,b=Infinity,c=-Infinity,d=-Infinity;
+  M.items.forEach(it=>it.xy.forEach(q=>{if(q[0]<a)a=q[0];if(q[0]>c)c=q[0];if(q[1]<b)b=q[1];if(q[1]>d)d=q[1];}));
+  if(isFinite(a)){M.box=[a,b,c,d]; if(M.empty&&!M.originSet){M.ox=a;M.oy=b;M.originSet=true;}}
+  buildPaths(M);
+}
+function nextName(){let i=UP.length+1; const has=n=>UP.some(p=>p.n===n); while(has('N'+i))i++; return 'N'+i;}
+function addPoint(p,quiet){
+  const first=!M||!M.items.length;
+  const q={n:(p.n||'').trim().replace(/\s+/g,'_')||nextName(),y:p.y,x:p.x,z:p.z==null||!isFinite(p.z)?null:p.z};
+  UP.push(q); saveUser(); if(!quiet){syncUser(); showApp(); first?fit():ensureVisible();} return q.n;
+}
+function ensureVisible(){ // girilen noktalardan biri ekran dışındaysa hepsini sığdır
+  const r=cv.getBoundingClientRect(); const out=UP.some(p=>{const [x,y]=toS(p.y,p.x); return x<20||y<20||x>r.width-20||y>r.height-20;}); out?fit():draw();
+}
+function showApp(){
+  if(!M)M=emptyModel();
+  $('empty').hidden=true; $('fabs').hidden=false; $('scale').hidden=false; if(M.empty)$('fname').textContent='Noktalarım';
+  ['bLayers','bCoord','bMeasure','bExport'].forEach(id=>$(id).disabled=false);
+}
+function newProject(){ if(!M){M=emptyModel(); syncUser(); showApp(); resize(); fit();} openPoints(); }
+function parseLines(t){ // her satır: ad Y X Z  (ayraç boşluk, sekme, ; veya ,)
+  const out=[],bad=[];
+  t.split(/\r?\n/).forEach((raw,i)=>{const l=raw.trim(); if(!l)return;
+    let tok=l.split(/[\s;\t]+/).filter(Boolean); if(tok.length<3)tok=l.split(/[\s,;\t]+/).filter(Boolean);
+    let n='',k=0; if(tok.length>=4||!isFinite(num(tok[0]))){n=tok[0];k=1;}
+    const y=num(tok[k]),x=num(tok[k+1]),z=num(tok[k+2]);
+    if(!isFinite(y)||!isFinite(x)){bad.push(i+1);return;} out.push({n,y,x,z:isFinite(z)?z:null});});
+  return {out,bad};
+}
+function openPoints(){
+  const sel=new Set((openPoints.sel||[]).filter(n=>UP.some(p=>p.n===n)));
+  const rows=UP.map((p,i)=>`<div class="prow"><input type="checkbox" data-sel="${i}" ${sel.has(p.n)?'checked':''} aria-label="${esc(p.n)} seç"><div class="pc"><b>${esc(p.n)}</b>${f3(p.y)}  ${f3(p.x)}${p.z!=null?'  '+f3(p.z):''}</div><button class="del" data-del="${i}" aria-label="${esc(p.n)} sil">×</button></div>`).join('');
+  const shp=US.map((s,i)=>`<div class="prow"><div class="pc"><b>${s.closed?'Alan':'Çizgi'} ${i+1}</b>${s.pts.map(p=>esc(p.n||'•')).join('–')}${s.closed?' · '+polyArea(s.pts).toFixed(2)+' m²':' · '+polyLen(s.pts,false).toFixed(2)+' m'}</div>${s.closed?`<button class="del" data-calc="${i}" aria-label="Hesapla" style="font-size:13px;width:auto;padding:0 10px;border-radius:10px">Hesap</button>`:''}<button class="del" data-sdel="${i}" aria-label="Sil">×</button></div>`).join('');
+  sheet('Noktalar ('+UP.length+')',`
+    <form class="pform" id="pForm" autocomplete="off">
+      <input class="inp full" id="pN" placeholder="Nokta adı (boşsa ${nextName()})" enterkeyhint="next">
+      <input class="inp" id="pY" inputmode="decimal" placeholder="Y (sağa)" enterkeyhint="next">
+      <input class="inp" id="pX" inputmode="decimal" placeholder="X (yukarı)" enterkeyhint="next">
+      <input class="inp" id="pZ" inputmode="decimal" placeholder="Z (kot)" enterkeyhint="done">
+      <button class="btnp" type="submit">Ekle</button>
+    </form>
+    <details class="paste"><summary>Çok nokta yapıştır</summary>
+      <textarea class="inp" id="pPaste" placeholder="Her satıra bir nokta: ad Y X Z"></textarea>
+      <button class="btng" id="pPasteBtn" type="button" style="width:100%;margin-top:8px">Hepsini ekle</button></details>
+    ${UP.length>=2?`<div class="two"><button id="pDraw" type="button">Elle çiz</button><button id="pCalc" type="button">Alan / hacim</button></div>
+    <p class="note" style="margin:2px 0 6px">Alan ve hacim işaretlediğin noktalarla, işaret yoksa tüm noktalarla hesaplanır. Alan, noktaların listedeki sırasıyla çizilen şekildir.</p>`:''}
+    ${US.length?`<div class="sec">Çizimlerim</div>${shp}`:''}
+    ${UP.length?`<div class="sec">Girilen noktalar</div>${rows}<div class="two" style="margin-top:12px"><button id="pFit" type="button">Haritada göster</button><button id="pClr" type="button" class="danger" style="color:var(--err)">${openPoints.arm?'Emin misin? Sil':'Tümünü sil'}</button></div>`:'<p class="note">Henüz nokta yok. Koordinatını yazıp “Ekle”ye bas, ya da Koordinat modunda çizimdeki bir yere dokunup “Nokta ekle” de.</p>'}`);
+  openPoints.arm=false;
+  const keep=()=>{openPoints.sel=[...$('shBody').querySelectorAll('input[data-sel]:checked')].map(c=>UP[+c.dataset.sel].n);};
+  $('pForm').onsubmit=e=>{e.preventDefault(); const y=num($('pY').value),x=num($('pX').value),z=num($('pZ').value);
+    if(!isFinite(y)||!isFinite(x)){toast('Y ve X koordinatını yaz'); (isFinite(y)?$('pX'):$('pY')).focus(); return;}
+    keep(); const n=addPoint({n:$('pN').value,y,x,z}); toast(n+' eklendi'); openPoints(); setTimeout(()=>$('pN').focus(),50);};
+  [['pN','pY'],['pY','pX'],['pX','pZ']].forEach(([a,b])=>$(a).addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$(b).focus();}}));
+  $('pPasteBtn').onclick=()=>{const r=parseLines($('pPaste').value); if(!r.out.length){toast('Okunabilen nokta yok');return;}
+    keep(); const first=!M.items.length; r.out.forEach(p=>addPoint(p,true)); syncUser(); showApp(); first?fit():ensureVisible();
+    toast(r.out.length+' nokta eklendi'+(r.bad.length?' · okunamayan satır: '+r.bad.slice(0,5).join(', '):'')); openPoints();};
+  const body=$('shBody');
+  body.onclick=e=>{const t=e.target;
+    if(t.dataset.del!=null){keep(); UP.splice(+t.dataset.del,1); saveUser(); syncUser(); draw(); openPoints(); return;}
+    if(t.dataset.sdel!=null){US.splice(+t.dataset.sdel,1); saveUser(); draw(); keep(); openPoints(); return;}
+    if(t.dataset.calc!=null){const s=US[+t.dataset.calc]; openCalc('Alan '+(+t.dataset.calc+1),s.pts,zpFor(s.pts)); return;}
+    if(t.id==='pFit'){closeSheet(); fit(); return;}
+    if(t.id==='pClr'){if(!openPoints.armed){openPoints.armed=true; t.textContent='Emin misin? Sil'; return;} openPoints.armed=false; UP=[];US=[]; openPoints.sel=[]; saveUser(); syncUser(); draw(); openPoints(); toast('Noktalar silindi'); return;}
+    if(t.id==='pDraw'){keep(); closeSheet(); showApp(); ensureVisible(); if(mode!=='draw')setMode('draw'); return;}
+    if(t.id==='pCalc'){keep(); const s=new Set(openPoints.sel); const pts=s.size>=3?UP.filter(p=>s.has(p.n)):UP; if(pts.length<3){toast('En az 3 nokta gerekir');return;} openCalc(s.size>=3?s.size+' seçili nokta':'Tüm noktalar',pts,pts.filter(p=>p.z!=null));}
+  };
+  openPoints.armed=false;
+}
+function zpFor(poly){ // köşelerin kotları + şeklin içinde kalan kotlu noktalar
+  const inside=M.dots.filter(it=>it.L.visible&&it.z&&pip(it.xy[0][0],it.xy[0][1],poly)).map(it=>({n:(it.name||'').trim(),y:it.xy[0][0],x:it.xy[0][1],z:it.z}));
+  return poly.filter(p=>p.z!=null).concat(inside);
+}
+function showDraw(){
+  const c=$('card'), n=drw.length;
+  c.innerHTML=`<div class="title">Elle çiz <span class="tag">${n} nokta</span></div>
+    ${n<2?'<div class="row"><span class="k">'+(n?'Sıradaki noktaya dokun':'İlk noktaya dokun')+'</span></div>':''}
+    ${n>1?`<div class="row"><span class="k">Uzunluk</span><span class="v">${polyLen(drw,false).toFixed(2)} m</span></div>`:''}
+    ${n>2?`<div class="row"><span class="k">Kapatınca alan</span><span class="v">${polyArea(drw).toFixed(2)} m²</span></div>`:''}
+    <div class="acts"><button id="dUndo">Geri al</button>${n>1?'<button id="dLine">Çizgi bitir</button>':''}${n>2?'<button id="dClose" class="pri">Kapat · alan</button>':''}${n<2?'<button id="dCancel">Vazgeç</button>':''}</div>`;
+  c.hidden=false;
+  $('dUndo').onclick=()=>{drw.pop(); draw(); showDraw();};
+  if($('dCancel'))$('dCancel').onclick=()=>setMode('draw');
+  const fin=closed=>{const sh={pts:drw.slice(),closed}; US.push(sh); saveUser(); syncUser(); setMode('draw'); draw();
+    if(closed)openCalc('Alan '+US.length,sh.pts,zpFor(sh.pts)); else toast('Çizgi kaydedildi · '+polyLen(sh.pts,false).toFixed(2)+' m');};
+  if($('dLine'))$('dLine').onclick=()=>fin(false);
+  if($('dClose'))$('dClose').onclick=()=>fin(true);
+}
+
+/* ---------- alan ve hacim ---------- */
+function polyArea(P){let a=0; if(P.length<3)return 0; const y0=P[0].y,x0=P[0].x; for(let i=0;i<P.length;i++){const p=P[i],q=P[(i+1)%P.length]; a+=(p.y-y0)*(q.x-x0)-(q.y-y0)*(p.x-x0);} return Math.abs(a)/2;}
+function polyLen(P,closed){let l=0; for(let i=1;i<P.length;i++)l+=Math.hypot(P[i].y-P[i-1].y,P[i].x-P[i-1].x); if(closed&&P.length>2)l+=Math.hypot(P[0].y-P[P.length-1].y,P[0].x-P[P.length-1].x); return l;}
+function pip(y,x,P){let c=false; for(let i=0,j=P.length-1;i<P.length;j=i++){const a=P[i],b=P[j]; if((a.x>x)!==(b.x>x)&&y<(b.y-a.y)*(x-a.x)/(b.x-a.x)+a.y)c=!c;} return c;}
+function delaunay(P){ // Bowyer–Watson; P: [{y,x}] → üçgen dizinleri
+  const n=P.length; if(n<3)return [];
+  let a=Infinity,b=Infinity,c=-Infinity,d=-Infinity; P.forEach(p=>{if(p.y<a)a=p.y;if(p.y>c)c=p.y;if(p.x<b)b=p.x;if(p.x>d)d=p.x;});
+  const my=(a+c)/2,mx=(b+d)/2,s=Math.max(c-a,d-b)||1;
+  const V=P.map(p=>[p.y-my,p.x-mx]).concat([[-100*s,-100*s],[0,100*s],[100*s,-100*s]]);
+  const mk=(i,j,k)=>{const [ax,ay]=V[i],[bx,by]=V[j],[cx,cy]=V[k]; const D=2*(ax*(by-cy)+bx*(cy-ay)+cx*(ay-by));
+    if(Math.abs(D)<1e-12)return {i,j,k,x:0,y:0,r:Infinity};
+    const A=ax*ax+ay*ay,B=bx*bx+by*by,C=cx*cx+cy*cy, ux=(A*(by-cy)+B*(cy-ay)+C*(ay-by))/D, uy=(A*(cx-bx)+B*(ax-cx)+C*(bx-ax))/D;
+    return {i,j,k,x:ux,y:uy,r:(ax-ux)**2+(ay-uy)**2};};
+  let T=[mk(n,n+1,n+2)];
+  for(let p=0;p<n;p++){const [px,py]=V[p]; const keep=[],E=new Map();
+    T.forEach(t=>{if((px-t.x)**2+(py-t.y)**2<t.r*(1+1e-9)){[[t.i,t.j],[t.j,t.k],[t.k,t.i]].forEach(([u,v])=>{const key=u<v?u+','+v:v+','+u; E.set(key,E.has(key)?null:[u,v]);});} else keep.push(t);});
+    E.forEach(e=>{if(e)keep.push(mk(e[0],e[1],p));}); T=keep;}
+  return T.filter(t=>t.i<n&&t.j<n&&t.k<n).map(t=>[t.i,t.j,t.k]);
+}
+function volume(P,tris,ref){ // kazı (referans üstü) ve dolgu (referans altı), m³
+  let cut=0,fill=0,area=0;
+  tris.forEach(t=>{const A=P[t[0]],B=P[t[1]],C=P[t[2]];
+    const ar=Math.abs((B.y-A.y)*(C.x-A.x)-(C.y-A.y)*(B.x-A.x))/2; if(!ar)return; area+=ar;
+    const h=[A.z-ref,B.z-ref,C.z-ref], net=ar*(h[0]+h[1]+h[2])/3, pos=h.filter(v=>v>0).length, neg=h.filter(v=>v<0).length;
+    if(!neg){cut+=net;return;} if(!pos){fill-=net;return;}
+    if(pos===1){const [p,u,v]=h.slice().sort((x,y)=>y-x); const cu=ar*p**3/(3*(p-u)*(p-v)); cut+=cu; fill+=cu-net;}
+    else{const [q,u,v]=h.slice().sort((x,y)=>x-y), m=-q; const fi=ar*m**3/(3*(m+u)*(m+v)); fill+=fi; cut+=net+fi;}});
+  return {cut,fill,area};
+}
+function openCalc(title,poly,zp){
+  // aynı yerde iki nokta varsa birini al
+  const seen=new Set(), Z=zp.filter(p=>{const k=p.y.toFixed(3)+','+p.x.toFixed(3); if(seen.has(k))return false; seen.add(k); return true;});
+  const area=polyArea(poly), per=polyLen(poly,true);
+  const tris=Z.length>=3?delaunay(Z):[];
+  const zs=Z.map(p=>p.z), zmin=zs.length?Math.min(...zs):0, zmax=zs.length?Math.max(...zs):0;
+  const ref0=openCalc.ref!=null&&isFinite(openCalc.ref)?openCalc.ref:zmin;
+  sheet(title,`<div class="rrow"><span class="k">Nokta sayısı</span><span class="v">${poly.length}</span></div>
+    <div class="rrow"><span class="k">Alan</span><span class="v">${area.toFixed(2)} m²</span></div>
+    <div class="rrow"><span class="k">Çevre</span><span class="v">${per.toFixed(3)} m</span></div>
+    <div class="sec">Hacim</div>
+    ${tris.length?`<div class="refrow"><label for="cRef">Referans kot (taban ya da proje kotu)</label><input class="inp" id="cRef" inputmode="decimal" value="${ref0.toFixed(3)}"></div>
+    <div id="cVol"></div>
+    <label class="chk"><input type="checkbox" id="cTin" checked> Üçgenleri haritada göster</label>
+    <p class="note">Hacim, kotlu ${Z.length} noktadan kurulan ${tris.length} üçgenli ağa (TIN) göre hesaplanır. Kazı referans kotun üstünde, dolgu altında kalan kısımdır. En düşük kot ${f3(zmin)}, en yüksek ${f3(zmax)}.</p>`
+    :`<p class="note">Hacim için kotu (Z) olan en az 3 nokta gerekir. Şu an kotlu nokta sayısı: ${Z.length}. Noktalara Z değeri girersen hacim de hesaplanır.</p>`}
+    <div class="two" style="margin-top:12px"><button id="cCopy2" type="button">Kopyala</button><button id="cBack" type="button">Noktalar</button></div>`);
+  let res=null;
+  const run=()=>{if(!tris.length)return; const ref=num($('cRef').value); if(!isFinite(ref)){$('cVol').innerHTML='<p class="note">Referans kotu sayı olarak yaz.</p>';res=null;return;}
+    openCalc.ref=ref; res=volume(Z,tris,ref);
+    $('cVol').innerHTML=`<div class="rrow"><span class="k">Kazı (üstte kalan)</span><span class="v cut">${res.cut.toFixed(2)} m³</span></div>
+      <div class="rrow"><span class="k">Dolgu (altta kalan)</span><span class="v fill">${res.fill.toFixed(2)} m³</span></div>
+      <div class="rrow"><span class="k">Net</span><span class="v">${(res.cut-res.fill).toFixed(2)} m³</span></div>
+      <div class="rrow"><span class="k">Üçgen ağı alanı</span><span class="v">${res.area.toFixed(2)} m²</span></div>`;};
+  if(tris.length){$('cRef').addEventListener('input',run); run(); TIN={p:Z,tris}; $('cTin').onchange=e=>{TIN=e.target.checked?{p:Z,tris}:null; draw();};} else TIN=null;
+  draw();
+  $('cCopy2').onclick=()=>copyText(`${title}\nAlan: ${area.toFixed(2)} m²\nÇevre: ${per.toFixed(3)} m`+(res?`\nReferans kot: ${f3(openCalc.ref)}\nKazı: ${res.cut.toFixed(2)} m³\nDolgu: ${res.fill.toFixed(2)} m³\nNet: ${(res.cut-res.fill).toFixed(2)} m³`:''));
+  $('cBack').onclick=()=>{openPoints();};
+}
+
 /* ---------- dosya açma ---------- */
 function loadBytes(bytes,name){
   $('busy').hidden=false;
   setTimeout(()=>{
     try{
-      const r=parseNCZ(bytes); M=buildModel(r,name);
+      const r=parseNCZ(bytes); M=buildModel(r,name); syncUser(); TIN=null;
       $('empty').hidden=true; $('fabs').hidden=false; $('scale').hidden=false; $('fname').textContent=name;
       ['bLayers','bCoord','bMeasure','bExport'].forEach(id=>$(id).disabled=false);
       clearMode();
@@ -463,6 +670,7 @@ window.__toast=toast;
 $('openBtn').onclick=openFile; $('emptyOpen').onclick=openFile;
 $('infoBtn').onclick=openAbout;
 $('bLayers').onclick=openLayers; $('bExport').onclick=openExport;
+$('bPoints').onclick=()=>{if(!M){newProject();return;} openPoints();}; $('newBtn').onclick=newProject;
 $('bCoord').onclick=()=>setMode('coord'); $('bMeasure').onclick=()=>setMode('measure');
 $('zFit').onclick=fit;
 $('zNames').onclick=()=>{showNames=!showNames;$('zNames').setAttribute('aria-pressed',showNames);draw();};
@@ -495,7 +703,7 @@ $('demoBtn').onclick=()=>{
   loadBytesModel({entities:E,layer_names:L,layer_colors:C,version_name:'',unsupported_geometry_types:{}},'ornek-pafta.NCZ');
 };
 function loadBytesModel(r,name){ // örnek için ayrıştırıcıyı atla
-  M=buildModel(r,name); $('empty').hidden=true; $('fabs').hidden=false; $('scale').hidden=false; $('fname').textContent=name+' (örnek)';
+  M=buildModel(r,name); syncUser(); TIN=null; $('empty').hidden=true; $('fabs').hidden=false; $('scale').hidden=false; $('fname').textContent=name+' (örnek)';
   ['bLayers','bCoord','bMeasure','bExport'].forEach(id=>$(id).disabled=false); clearMode(); resize(); fit();
 }
 resize();

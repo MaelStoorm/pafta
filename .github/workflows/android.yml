@@ -2,7 +2,7 @@ name: Android derleme
 
 on:
   push:
-    branches: [main]
+    branches: [main, nokta-hesap]
     paths-ignore: ['docs/**', 'store/**', 'README.md']
   workflow_dispatch:
 
@@ -40,12 +40,13 @@ jobs:
           name: Pafta
           path: cikti/
 
-      - name: Çıktıları "builds" dalına koy
+      - name: Çıktıları "builds" (deneme dallarında "deneme-apk") dalına koy
         run: |
+          HEDEF=builds; [ "${{ github.ref_name }}" = "main" ] || HEDEF=deneme-apk
           cd cikti
-          git init -q -b builds
+          git init -q -b "$HEDEF"
           git config user.name "github-actions"
           git config user.email "github-actions@users.noreply.github.com"
           git add -A
           git commit -qm "Derleme ${{ github.run_number }} (${{ github.sha }})"
-          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" builds
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" "$HEDEF"
