@@ -14,6 +14,12 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      - name: Uygulama kodunu sıkıştır
+        run: |
+          mkdir -p "$RUNNER_TEMP/sk" && cp tools/sikistir.mjs "$RUNNER_TEMP/sk/"
+          (cd "$RUNNER_TEMP/sk" && npm i --no-save --silent terser@5.31.6)
+          node "$RUNNER_TEMP/sk/sikistir.mjs" app/src/main/assets/index.html app/src/main/assets/ncz.js
+
       - uses: actions/setup-java@v5
         with:
           distribution: temurin

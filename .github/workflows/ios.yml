@@ -40,6 +40,12 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      - name: Uygulama kodunu sıkıştır
+        run: |
+          mkdir -p "$RUNNER_TEMP/sk" && cp tools/sikistir.mjs "$RUNNER_TEMP/sk/"
+          (cd "$RUNNER_TEMP/sk" && npm i --no-save --silent terser@5.31.6)
+          node "$RUNNER_TEMP/sk/sikistir.mjs" app/src/main/assets/index.html app/src/main/assets/ncz.js
+
       - name: Xcode 26 seç
         run: |
           X=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
