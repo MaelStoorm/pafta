@@ -180,7 +180,7 @@ details.paste summary{cursor:pointer;color:var(--hl);font-weight:700;font-size:1
 <script>
 'use strict';
 const $=id=>document.getElementById(id);
-const AB=window.AndroidBridge||null;
+const AB=window.AppBridge/*android:start*/||window.AndroidBridge/*android:end*/||null;
 const cv=$('cv'), ctx=cv.getContext('2d');
 let M=null;            // açık çizim
 let view={s:1,tx:0,ty:0};
@@ -663,7 +663,7 @@ function loadBytes(bytes,name){
 }
 function openFile(){ if(AB&&AB.pickNcz)AB.pickNcz(); else $('fileIn').click(); }
 $('fileIn').addEventListener('change',async()=>{const f=$('fileIn').files[0]; if(!f)return; const buf=new Uint8Array(await f.arrayBuffer()); $('fileIn').value=''; loadBytes(buf,f.name);});
-window.onNativeFile=function(name,b64){ // Android'den gelen dosya
+window.onNativeFile=function(name,b64){ // uygulamadan gelen dosya
   try{const s=atob(b64),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);loadBytes(u,name);}catch(e){toast('Dosya okunamadı');}
 };
 window.__toast=toast;

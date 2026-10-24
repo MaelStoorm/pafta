@@ -35,6 +35,16 @@ if a.fonts_css:
     shutil.copy(a.fonts_css, out / "fonts.css")
     if a.fonts_dir:
         shutil.copytree(a.fonts_dir, out / "fonts")
+# Yalnızca Android/web sürümüne ait bölümler iOS kopyasına hiç girmez
+def strip_android(text, name):
+    pats = [(r"/\*android:start\*/", r"/\*android:end\*/"), (r"<!--android:start-->", r"<!--android:end-->")]
+    for a_, b_ in pats:
+        if len(re.findall(a_, text)) != len(re.findall(b_, text)):
+            raise SystemExit(f"{name}: android:start/end işaretleri eşleşmiyor")
+        text = re.sub(a_ + r"[\s\S]*?" + b_, "", text)
+    return text
+
+html = strip_android(html, a.html)
 (out / "index.html").write_text(html, encoding="utf-8")
 
 for item in a.copy:

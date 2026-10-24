@@ -1,6 +1,6 @@
 /*
- * Uygulamanın tek ekranı: sitenin index.html sayfasını açar ve sayfanın Android'de kullandığı
- * köprüleri iOS karşılıklarıyla tanımlar (dosya aç/kaydet, kopyala, konum, dış bağlantılar).
+ * Uygulamanın tek ekranı: sitenin index.html sayfasını açar,
+ * dosya köprüsünü tanımlar (NCZ aç, dosya kaydet, kopyala) ve dış bağlantıları telefonda açar.
  * Telif Hakkı (c) 2026 Egemen Çalıkoğlu. Tüm hakları saklıdır.
  */
 import UIKit
@@ -15,16 +15,10 @@ final class ShellViewController: UIViewController, WKNavigationDelegate, WKUIDel
     private var pageReady = false
     private var pendingFiles: [URL] = []
 
-    private enum PickMode { case textFiles, binaryFile }
-    private var pickMode: PickMode = .textFiles
     private var exportFile: URL?
 
-    let location = ShellLocation()
-    private var reminders: ShellReminders?
-    private var askedReminders = false
-
     override var preferredStatusBarStyle: UIStatusBarStyle {
-        config.autoStatusBar ? .default : (config.lightStatusBar ? .lightContent : .darkContent)
+        config.lightStatusBar ? .lightContent : .darkContent
     }
     override var prefersHomeIndicatorAutoHidden: Bool { config.orientations == .landscape }
 
@@ -44,7 +38,7 @@ final class ShellViewController: UIViewController, WKNavigationDelegate, WKUIDel
         cfg.dataDetectorTypes = []
         cfg.websiteDataStore = .default()
         let site = Bundle.main.url(forResource: "site", withExtension: nil) ?? Bundle.main.bundleURL
-        cfg.setURLSchemeHandler(SiteScheme(root: site, proxyOrigin: config.proxyOrigin), forURLScheme: SiteScheme.scheme)
+        cfg.setURLSchemeHandler(SiteScheme(root: site), forURLScheme: SiteScheme.scheme)
 
         web = WKWebView(frame: .zero, configuration: cfg)
         web.navigationDelegate = self
@@ -61,28 +55,8 @@ final class ShellViewController: UIViewController, WKNavigationDelegate, WKUIDel
         view.backgroundColor = config.background
     }
 
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-        // Oyun açılırken bildirim izni bir kez sorulur (Android'deki gibi)
-        if let r = reminders, !askedReminders {
-            askedReminders = true
-            r.askPermission()
-        }
-    }
-
-    // Alçak ekranlarda (ör. yatay iPhone) sayfa, tasarlandığı yüksekliğe sığacak kadar uzaklaştırılır
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        guard config.fitHeight > 0, view.bounds.height > 0 else { return }
-        let usable = view.bounds.height - view.safeAreaInsets.top - view.safeAreaInsets.bottom
-        let zoom = max(0.7, min(1, usable / config.fitHeight))
-        if abs(web.pageZoom - zoom) > 0.01 { web.pageZoom = zoom }
-    }
-
     override func viewDidLoad() {
         super.viewDidLoad()
-        location.answer = { [weak self] args in self?.call("window.__shellLocation", args) }
-        if config.reminders == "pati" { reminders = ShellReminders(web: web) }
         web.load(URLRequest(url: URL(string: "\(SiteScheme.scheme)://\(SiteScheme.host)/\(config.startPage)")!))
     }
 
@@ -99,7 +73,6 @@ final class ShellViewController: UIViewController, WKNavigationDelegate, WKUIDel
         })();
         """]
         // Sayfa iki parmakla büyümesin: yakınlaştırmayı sayfanın kendisi (ör. harita) yapsın
-        let css = config.extraCSS.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "`", with: "\\`")
         list.append("""
         document.addEventListener('DOMContentLoaded', function () {
           var m = document.querySelector('meta[name=viewport]');
@@ -108,64 +81,16 @@ final class ShellViewController: UIViewController, WKNavigationDelegate, WKUIDel
             .split(',').map(function (s) { return s.trim(); })
             .filter(function (s) { return s && !/^(maximum-scale|minimum-scale|user-scalable)/.test(s); });
           m.content = c.concat(['maximum-scale=1', 'minimum-scale=1', 'user-scalable=no']).join(',');
-          var css = `\(css)`;
-          if (css) { var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st); }
         });
         """)
-        if config.bridge == "files" {
-            list.append("""
-            window.AndroidBridge = {
-              pickFiles: function () { webkit.messageHandlers.shell.postMessage({ op: 'pickText' }); },
+        list.append("""
+            window.AppBridge = {
               pickNcz: function () { webkit.messageHandlers.shell.postMessage({ op: 'pickBinary' }); },
               saveFile: function (n, d) { webkit.messageHandlers.shell.postMessage({ op: 'save', name: String(n), data: String(d) }); },
               saveFileBase64: function (n, d) { webkit.messageHandlers.shell.postMessage({ op: 'save', name: String(n), b64: String(d) }); },
               copy: function (t) { webkit.messageHandlers.shell.postMessage({ op: 'copy', text: String(t) }); }
             };
             """)
-        }
-        if let origin = config.proxyOrigin {
-            // Sunucuya giden fetch istekleri uygulamanın kendi adresi üzerinden iletilir
-            let o = origin.replacingOccurrences(of: "\"", with: "")
-            list.append("""
-            (function () {
-              var O = "\(o)", P = "\(SiteScheme.proxyPrefix)", f = window.fetch;
-              window.fetch = function (input, init) {
-                try {
-                  var u = typeof input === 'string' ? input : (input && input.url) || String(input);
-                  if (u.indexOf(O) === 0) {
-                    var n = P + u.slice(O.length);
-                    input = (typeof input === 'string' || !(input instanceof Request)) ? n : new Request(n, input);
-                  }
-                } catch (e) {}
-                return f.call(this, input, init);
-              };
-            })();
-            """)
-        }
-        if config.geolocation {
-            // Konum telefonun kendi konum servisinden alınır
-            list.append("""
-            (function () {
-              var waiting = {}, n = 0;
-              function ask(ok, fail) {
-                var id = ++n; waiting[id] = { ok: ok, fail: fail };
-                webkit.messageHandlers.shell.postMessage({ op: 'location', id: id });
-                return id;
-              }
-              window.__shellLocation = function (id, lat, lon, acc, code, msg) {
-                var w = waiting[id]; if (!w) return; delete waiting[id];
-                if (code) { if (w.fail) w.fail({ code: code, message: msg, PERMISSION_DENIED: 1, POSITION_UNAVAILABLE: 2, TIMEOUT: 3 }); return; }
-                if (w.ok) w.ok({ coords: { latitude: lat, longitude: lon, accuracy: acc, altitude: null, altitudeAccuracy: null, heading: null, speed: null }, timestamp: Date.now() });
-              };
-              var geo = {
-                getCurrentPosition: function (ok, fail) { ask(ok, fail); },
-                watchPosition: function (ok, fail) { return ask(ok, fail); },
-                clearWatch: function () {}
-              };
-              try { Object.defineProperty(navigator, 'geolocation', { value: geo, configurable: true }); } catch (e) {}
-            })();
-            """)
-        }
         return list
     }
 
@@ -246,8 +171,7 @@ final class ShellViewController: UIViewController, WKNavigationDelegate, WKUIDel
     func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
         guard let body = message.body as? [String: Any], let op = body["op"] as? String else { return }
         switch op {
-        case "pickText": pick(.textFiles)
-        case "pickBinary": pick(.binaryFile)
+        case "pickBinary": pick()
         case "save":
             let name = body["name"] as? String ?? "dosya.txt"
             if let b64 = body["b64"] as? String {
@@ -257,8 +181,6 @@ final class ShellViewController: UIViewController, WKNavigationDelegate, WKUIDel
             }
         case "copy":
             UIPasteboard.general.string = body["text"] as? String ?? ""
-        case "location":
-            if let id = body["id"] as? Int { location.request(id) }
         case "log":
             NSLog("[kabuk] %@", body["text"] as? String ?? "")
         default:
@@ -266,11 +188,10 @@ final class ShellViewController: UIViewController, WKNavigationDelegate, WKUIDel
         }
     }
 
-    private func pick(_ mode: PickMode) {
-        pickMode = mode
+    private func pick() {
         exportFile = nil
         let picker = UIDocumentPickerViewController(forOpeningContentTypes: [.item], asCopy: true)
-        picker.allowsMultipleSelection = mode == .textFiles
+        picker.allowsMultipleSelection = false
         picker.delegate = self
         present(picker, animated: true)
     }
@@ -316,42 +237,22 @@ final class ShellViewController: UIViewController, WKNavigationDelegate, WKUIDel
     // MARK: - Dosyaları sayfaya ver
 
     func openIncoming(_ url: URL) {
-        guard config.incoming != "none" else { return }
-        pickMode = config.incoming == "binary" ? .binaryFile : .textFiles
         pendingFiles.append(url)
         flushPendingFiles()
     }
 
     private func flushPendingFiles() {
         guard pageReady, !pendingFiles.isEmpty else { return }
-        var files = pendingFiles
+        let url = pendingFiles.last!  // görüntüleyici tek dosya açar
         pendingFiles.removeAll()
-        if pickMode == .binaryFile, let last = files.last { files = [last] }  // görüntüleyici tek dosya açar
-        for url in files {
-            guard let data = read(url) else {
-                toast("Dosya okunamadı: \(url.lastPathComponent)")
-                continue
-            }
-            if pickMode == .binaryFile {
-                call("window.onNativeFile", [url.lastPathComponent, data.base64EncodedString()])
-            } else {
-                call("window.__addFileFromApp", [url.lastPathComponent, text(data)])
-            }
-        }
+        guard let data = read(url) else { return toast("Dosya okunamadı: \(url.lastPathComponent)") }
+        call("window.onNativeFile", [url.lastPathComponent, data.base64EncodedString()])
     }
 
     private func read(_ url: URL) -> Data? {
         let scoped = url.startAccessingSecurityScopedResource()
         defer { if scoped { url.stopAccessingSecurityScopedResource() } }
         return try? Data(contentsOf: url)
-    }
-
-    private func text(_ data: Data) -> String {
-        if let s = String(data: data, encoding: .utf8) { return s }
-        // Netcad dosyaları çoğunlukla Windows Türkçe kod sayfasındadır (windows-1254)
-        let cp1254 = String.Encoding(rawValue: CFStringConvertEncodingToNSStringEncoding(
-            CFStringEncoding(CFStringEncodings.windowsLatin5.rawValue)))
-        return String(data: data, encoding: cp1254) ?? String(decoding: data, as: UTF8.self)
     }
 
     private func toast(_ message: String) { call("window.__toast", [message]) }

@@ -50,6 +50,7 @@ jobs:
       - name: Siteyi hazırla ve Xcode projesini üret
         run: |
           ios/hazirla.sh
+          python3 ios/denetle.py ios/gen/Pafta/site ios/Shell ios/project.yml
           brew install xcodegen >/dev/null
           cd ios && xcodegen generate
 
