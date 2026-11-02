@@ -96,6 +96,8 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;displa
 /* nokta girme ve hesap */
 .pform{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
 .pform .full{grid-column:1/-1}
+.pmw{display:flex;gap:6px;min-width:0}.pmw .inp{flex:1 1 auto;width:auto}
+.pm{flex:none;width:46px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);color:var(--ink);font:700 20px system-ui,sans-serif;cursor:pointer}
 .inp{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px 12px;color:var(--ink);font:600 16px ui-monospace,Menlo,monospace;width:100%;min-width:0;user-select:text;-webkit-user-select:text}
 .inp:focus{outline:2px solid var(--hl);outline-offset:0}
 textarea.inp{min-height:96px;resize:vertical;font-size:14px}
@@ -535,7 +537,7 @@ function openPoints(){
       <input class="inp full" id="pN" placeholder="Nokta adı (boşsa ${nextName()})" enterkeyhint="next">
       <input class="inp" id="pY" inputmode="decimal" placeholder="Y (sağa)" enterkeyhint="next">
       <input class="inp" id="pX" inputmode="decimal" placeholder="X (yukarı)" enterkeyhint="next">
-      <input class="inp" id="pZ" inputmode="decimal" placeholder="Z (kot)" enterkeyhint="done">
+      <div class="pmw"><input class="inp" id="pZ" inputmode="decimal" placeholder="Z (kot)" enterkeyhint="done"><button type="button" class="pm" data-pm="pZ" aria-label="Eksi / artı">±</button></div>
       <button class="btnp" type="submit">Ekle</button>
     </form>
     <details class="paste"><summary>Çok nokta yapıştır</summary>
@@ -626,7 +628,7 @@ function openCalc(title,poly,zp){
     <div class="rrow"><span class="k">Alan</span><span class="v">${area.toFixed(2)} m²</span></div>
     <div class="rrow"><span class="k">Çevre</span><span class="v">${per.toFixed(3)} m</span></div>
     <div class="sec">Hacim</div>
-    ${tris.length?`<div class="refrow"><label for="cRef">Referans kot (taban ya da proje kotu)</label><input class="inp" id="cRef" inputmode="decimal" value="${ref0.toFixed(3)}"></div>
+    ${tris.length?`<div class="refrow"><label for="cRef">Referans kot (taban ya da proje kotu)</label><span class="pmw"><input class="inp" id="cRef" inputmode="decimal" value="${ref0.toFixed(3)}"><button type="button" class="pm" data-pm="cRef" aria-label="Eksi / artı">±</button></span></div>
     <div id="cVol"></div>
     <label class="chk"><input type="checkbox" id="cTin" checked> Üçgenleri haritada göster</label>
     <p class="note">Hacim, kotlu ${Z.length} noktadan kurulan ${tris.length} üçgenli ağa (TIN) göre hesaplanır. Kazı referans kotun üstünde, dolgu altında kalan kısımdır. En düşük kot ${f3(zmin)}, en yüksek ${f3(zmax)}.</p>`
@@ -667,6 +669,10 @@ window.onNativeFile=function(name,b64){ // uygulamadan gelen dosya
   try{const s=atob(b64),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);loadBytes(u,name);}catch(e){toast('Dosya okunamadı');}
 };
 window.__toast=toast;
+// Sayı klavyesinde eksi tuşu olmayan telefonlar için: ± düğmesi kutudaki değerin işaretini değiştirir
+document.addEventListener('click',e=>{const b=e.target.closest('[data-pm]'); if(!b)return; e.preventDefault(); const i=$(b.dataset.pm); if(!i)return;
+  const v=i.value.trim(); i.value=v.startsWith('-')?v.slice(1):'-'+v; i.dispatchEvent(new Event('input',{bubbles:true})); i.focus();
+  try{const n=i.value.length; i.setSelectionRange(n,n);}catch(_){}});
 $('openBtn').onclick=openFile; $('emptyOpen').onclick=openFile;
 $('infoBtn').onclick=openAbout;
 $('bLayers').onclick=openLayers; $('bExport').onclick=openExport;
