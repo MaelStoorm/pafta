@@ -386,7 +386,7 @@ function showMeasure(){
   $('mClear').onclick=()=>{meas=[]; draw(); c.hidden=true;};
   if($('mVol'))$('mVol').onclick=()=>{
     const poly=meas.map(p=>{const pt=p.snapped?nearestPoint(p):null; return {n:pt&&pt.name?pt.name.trim():'',y:p.x,x:p.y,z:pt&&pt.z?pt.z:null};});
-    openCalc('Ölçülen alan',poly,zpFor(poly));};
+    openCalc('Ölçülen alan',poly,zpFor(poly),true);};
   if($('mCopy'))$('mCopy').onclick=()=>copyText(`Uzunluk: ${f3(tot)} m`+(meas.length>2?`\nAlan: ${area.toFixed(2)} m²\nÇevre: ${f3(per)} m`:''));
 }
 function copyText(t){
@@ -560,7 +560,7 @@ function openPoints(){
   body.onclick=e=>{const t=e.target;
     if(t.dataset.del!=null){keep(); UP.splice(+t.dataset.del,1); saveUser(); syncUser(); draw(); openPoints(); return;}
     if(t.dataset.sdel!=null){US.splice(+t.dataset.sdel,1); saveUser(); draw(); keep(); openPoints(); return;}
-    if(t.dataset.calc!=null){const s=US[+t.dataset.calc]; openCalc('Alan '+(+t.dataset.calc+1),s.pts,zpFor(s.pts)); return;}
+    if(t.dataset.calc!=null){const s=US[+t.dataset.calc]; openCalc('Alan '+(+t.dataset.calc+1),s.pts,zpFor(s.pts),true); return;}
     if(t.id==='pFit'){closeSheet(); fit(); return;}
     if(t.id==='pClr'){if(!openPoints.armed){openPoints.armed=true; t.textContent='Emin misin? Sil'; return;} openPoints.armed=false; UP=[];US=[]; openPoints.sel=[]; saveUser(); syncUser(); draw(); openPoints(); toast('Noktalar silindi'); return;}
     if(t.id==='pDraw'){keep(); closeSheet(); showApp(); ensureVisible(); if(mode!=='draw')setMode('draw'); return;}
@@ -569,7 +569,7 @@ function openPoints(){
   openPoints.armed=false;
 }
 function zpFor(poly){ // köşelerin kotları + şeklin içinde kalan kotlu noktalar
-  const inside=M.dots.filter(it=>it.L.visible&&it.z&&pip(it.xy[0][0],it.xy[0][1],poly)).map(it=>({n:(it.name||'').trim(),y:it.xy[0][0],x:it.xy[0][1],z:it.z}));
+  const inside=M.dots.filter(it=>it.L.visible&&it.z!=null&&isFinite(it.z)&&pip(it.xy[0][0],it.xy[0][1],poly)).map(it=>({n:(it.name||'').trim(),y:it.xy[0][0],x:it.xy[0][1],z:it.z}));
   return poly.filter(p=>p.z!=null).concat(inside);
 }
 function showDraw(){
@@ -583,7 +583,7 @@ function showDraw(){
   $('dUndo').onclick=()=>{drw.pop(); draw(); showDraw();};
   if($('dCancel'))$('dCancel').onclick=()=>setMode('draw');
   const fin=closed=>{const sh={pts:drw.slice(),closed}; US.push(sh); saveUser(); syncUser(); setMode('draw'); draw();
-    if(closed)openCalc('Alan '+US.length,sh.pts,zpFor(sh.pts)); else toast('Çizgi kaydedildi · '+polyLen(sh.pts,false).toFixed(2)+' m');};
+    if(closed)openCalc('Alan '+US.length,sh.pts,zpFor(sh.pts),true); else toast('Çizgi kaydedildi · '+polyLen(sh.pts,false).toFixed(2)+' m');};
   if($('dLine'))$('dLine').onclick=()=>fin(false);
   if($('dClose'))$('dClose').onclick=()=>fin(true);
 }
@@ -617,11 +617,13 @@ function volume(P,tris,ref){ // kazı (referans üstü) ve dolgu (referans altı
     else{const [q,u,v]=h.slice().sort((x,y)=>x-y), m=-q; const fi=ar*m**3/(3*(m+u)*(m+v)); fill+=fi; cut+=net+fi;}});
   return {cut,fill,area};
 }
-function openCalc(title,poly,zp){
+function openCalc(title,poly,zp,clip){
   // aynı yerde iki nokta varsa birini al
   const seen=new Set(), Z=zp.filter(p=>{const k=p.y.toFixed(3)+','+p.x.toFixed(3); if(seen.has(k))return false; seen.add(k); return true;});
   const area=polyArea(poly), per=polyLen(poly,true);
-  const tris=Z.length>=3?delaunay(Z):[];
+  let tris=Z.length>=3?delaunay(Z):[];
+  // sınır çizilmişse girintili kısımlardan taşan üçgenler atılır (ağırlık merkezi sınırın dışında kalanlar)
+  if(clip&&poly.length>=3)tris=tris.filter(t=>pip((Z[t[0]].y+Z[t[1]].y+Z[t[2]].y)/3,(Z[t[0]].x+Z[t[1]].x+Z[t[2]].x)/3,poly));
   const zs=Z.map(p=>p.z), zmin=zs.length?Math.min(...zs):0, zmax=zs.length?Math.max(...zs):0;
   const ref0=openCalc.ref!=null&&isFinite(openCalc.ref)?openCalc.ref:zmin;
   sheet(title,`<div class="rrow"><span class="k">Nokta sayısı</span><span class="v">${poly.length}</span></div>
