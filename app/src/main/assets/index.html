@@ -139,8 +139,8 @@ details.paste summary{cursor:pointer;color:var(--hl);font-weight:700;font-size:1
   <canvas id="cv"></canvas>
   <div class="empty" id="empty">
     <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="48" height="48" rx="6"/><path d="M18 44 L26 20 L44 26 L38 46 Z"/><circle cx="18" cy="44" r="3" fill="currentColor"/><circle cx="26" cy="20" r="3" fill="currentColor"/><circle cx="44" cy="26" r="3" fill="currentColor"/><circle cx="38" cy="46" r="3" fill="currentColor"/></svg>
-    <h1>NCZ çizimini aç</h1>
-    <p>Netcad'de çizilmiş .NCZ dosyalarını telefonunda görüntüle, koordinat oku ve ölçüm yap.</p>
+    <h1>NCZ ya da NCN aç</h1>
+    <p>Netcad .NCZ çizimlerini ve .NCN nokta dosyalarını telefonunda aç; koordinat oku, ölç, alan ve kübaj (hacim) hesapla.</p>
     <button class="bigbtn" id="emptyOpen">Dosya aç</button>
     <button class="ghost" id="newBtn">Nokta gir, çiz, hesapla</button>
     <button class="ghost" id="demoBtn">Örnek çizimi göster</button>
@@ -176,7 +176,7 @@ details.paste summary{cursor:pointer;color:var(--hl);font-weight:700;font-size:1
   <div class="sh-body" id="shBody"></div>
 </div></div>
 <div class="toast" id="toast" hidden></div>
-<input type="file" id="fileIn" accept=".ncz,.NCZ" hidden>
+<input type="file" id="fileIn" accept=".ncz,.NCZ,.ncn,.NCN,.txt,.csv" hidden>
 
 <script src="ncz.js"></script>
 <script>
@@ -648,7 +648,24 @@ function openCalc(title,poly,zp){
 }
 
 /* ---------- dosya açma ---------- */
+function decodeText(bytes){
+  try{return new TextDecoder('utf-8',{fatal:true}).decode(bytes);}catch(e){}
+  try{return new TextDecoder('windows-1254').decode(bytes);}catch(e){return new TextDecoder().decode(bytes);}
+}
+function loadPointFile(bytes,name){ // NCN / TXT / CSV: ad Y X Z
+  const r=parseLines(decodeText(bytes).replace(/^\uFEFF/,''));
+  if(!r.out.length){toast('Dosyada okunabilen nokta yok');return false;}
+  UP=[];US=[];openPoints.sel=[];
+  const drawing=M&&!M.empty;
+  if(!drawing){M=emptyModel();M.file=name;}
+  r.out.forEach(p=>addPoint(p,true)); syncUser(); TIN=null; showApp(); clearMode();
+  if(!drawing)$('fname').textContent=name;
+  resize(); fit();
+  toast(r.out.length+' nokta açıldı'+(drawing?' (çizimin üstüne)':'')+(r.bad.length?' · okunamayan satır: '+r.bad.slice(0,5).join(', '):''));
+  return true;
+}
 function loadBytes(bytes,name){
+  if(/\.(ncn|txt|csv|xyz)$/i.test(name||'')){loadPointFile(bytes,name);return;}
   $('busy').hidden=false;
   setTimeout(()=>{
     try{
@@ -659,7 +676,7 @@ function loadBytes(bytes,name){
       resize(); fit();
       const un=Object.values(M.unsupported).reduce((a,b)=>a+b,0);
       toast(M.items.length+' nesne · '+M.layers.length+' katman');
-    }catch(e){toast('Dosya açılamadı: '+(e&&e.message?e.message:'bilinmeyen hata'));}
+    }catch(e){ if(!(bytes.length<2e6&&loadPointFile(bytes,name)))toast('Dosya açılamadı: '+(e&&e.message?e.message:'bilinmeyen hata'));}
     $('busy').hidden=true;
   },30);
 }
