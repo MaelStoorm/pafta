@@ -120,6 +120,11 @@ details.paste summary{cursor:pointer;color:var(--hl);font-weight:700;font-size:1
 .refrow label{flex:1;font-size:14px;color:var(--muted)}
 .refrow .inp{width:140px;flex:none}
 .busy{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#000a;font-weight:700;font-size:16px}
+.three{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:4px 0}
+.three button{border:1px solid var(--line,#2a3a31);background:transparent;color:inherit;border-radius:10px;padding:9px 4px;font-weight:700;font-size:13px}
+.three button[data-tag="su"]{border-color:#ff9f43;color:#ff9f43}.three button[data-tag="sa"]{border-color:#4fc3f7;color:#4fc3f7}
+.tg{font-style:normal;font-size:11px;font-weight:800;border-radius:6px;padding:1px 5px;margin-left:4px;vertical-align:1px}
+.tg.su{background:#ff9f4333;color:#ff9f43}.tg.sa{background:#4fc3f733;color:#4fc3f7}
 </style>
 </head>
 <body>
@@ -253,11 +258,11 @@ function resize(){
   cv.width=Math.round(r.width*dpr); cv.height=Math.round(r.height*dpr); draw();
 }
 function fit(){
-  if(!M)return; const r=cv.getBoundingClientRect(), pad=28;
+  if(!M)return; const r=cv.getBoundingClientRect(), pad=28, padR=70;
   const w=Math.max(M.box[2]-M.box[0],10), h=Math.max(M.box[3]-M.box[1],10);
-  const s=Math.min((r.width-pad*2)/w,(r.height-pad*2)/h);
+  const s=Math.min((r.width-pad-padR)/w,(r.height-pad*2)/h);
   const cx=(M.box[0]+M.box[2])/2-M.ox, cy=(M.box[1]+M.box[3])/2-M.oy;
-  view.s=s; view.tx=r.width/2-cx*s; view.ty=r.height/2+cy*s; draw();
+  view.s=s; view.tx=(pad+r.width-padR)/2-cx*s; view.ty=r.height/2+cy*s; draw();
 }
 const toS=(x,y)=>[(x-M.ox)*view.s+view.tx, -(y-M.oy)*view.s+view.ty];
 const toW=(sx,sy)=>[(sx-view.tx)/view.s+M.ox, -(sy-view.ty)/view.s+M.oy];
@@ -293,6 +298,16 @@ function draw(){
   if(UL.visible)US.forEach(sh=>{if(sh.pts.length<2)return; ctx.strokeStyle=UL.color; ctx.lineWidth=2.2; ctx.beginPath();
     sh.pts.forEach((p,i)=>{const [x,y]=toS(p.y,p.x); i?ctx.lineTo(x,y):ctx.moveTo(x,y);}); if(sh.closed)ctx.closePath(); ctx.stroke();
     if(sh.closed){ctx.fillStyle='rgba(255,210,63,.10)'; ctx.fill();}});
+  // şev üst / şev alt çizgileri ve şev taraması
+  if(UL.visible){const SU=sevRing('su'),SA=sevRing('sa');
+    const ring=(P,col)=>{if(P.length<2)return; ctx.strokeStyle=col; ctx.lineWidth=2.4; ctx.beginPath(); P.forEach((p,i)=>{const [x,y]=toS(p.y,p.x); i?ctx.lineTo(x,y):ctx.moveTo(x,y);}); if(P.length>2)ctx.closePath(); ctx.stroke();};
+    ring(SA,TAGC.sa); ring(SU,TAGC.su);
+    if(SU.length>2){const tgt=SA.length?SA:SU, cy=tgt.reduce((a,p)=>a+p.y,0)/tgt.length, cx=tgt.reduce((a,p)=>a+p.x,0)/tgt.length, [ox,oy]=toS(cy,cx);
+      ctx.strokeStyle=TAGC.su; ctx.lineWidth=1.4; ctx.beginPath(); let k=0;
+      SU.forEach((p,i)=>{const q=SU[(i+1)%SU.length], [ax,ay]=toS(p.y,p.x), [bx,by]=toS(q.y,q.x), L=Math.hypot(bx-ax,by-ay); if(L<1)return;
+        let nx=-(by-ay)/L, ny=(bx-ax)/L; const mx=(ax+bx)/2, my=(ay+by)/2; if((ox-mx)*nx+(oy-my)*ny<0){nx=-nx;ny=-ny;}
+        for(let d=6;d<L-3;d+=9){const x=ax+(bx-ax)*d/L, y=ay+(by-ay)*d/L, len=(k++%2)?7:15; ctx.moveTo(x,y); ctx.lineTo(x+nx*len,y+ny*len);}});
+      ctx.stroke();}}
   // üçgen ağı (hacim)
   if(TIN){ctx.strokeStyle='rgba(63,208,143,.75)'; ctx.lineWidth=1; ctx.beginPath();
     TIN.tris.forEach(t=>{const a=toS(TIN.p[t[0]].y,TIN.p[t[0]].x),b=toS(TIN.p[t[1]].y,TIN.p[t[1]].x),c=toS(TIN.p[t[2]].y,TIN.p[t[2]].x); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.lineTo(c[0],c[1]); ctx.closePath();}); ctx.stroke();}
@@ -498,16 +513,23 @@ function syncUser(){
   M.items=M.items.filter(it=>!it.user); M.layers=M.layers.filter(L=>!L.user);
   UL.count=UL.points=UP.length;
   if(UP.length||US.length)M.layers.unshift(UL);
-  UP.forEach(p=>M.items.push({kind:'Point',L:UL,color:UL.color,xy:[[p.y,p.x]],z:p.z,closed:false,text:'',name:p.n,h:0,rot:0,user:true}));
+  UP.forEach(p=>M.items.push({kind:'Point',L:UL,color:TAGC[p.t]||UL.color,xy:[[p.y,p.x]],z:p.z,closed:false,text:'',name:p.n,h:0,rot:0,user:true}));
   let a=Infinity,b=Infinity,c=-Infinity,d=-Infinity;
   M.items.forEach(it=>it.xy.forEach(q=>{if(q[0]<a)a=q[0];if(q[0]>c)c=q[0];if(q[1]<b)b=q[1];if(q[1]>d)d=q[1];}));
   if(isFinite(a)){M.box=[a,b,c,d]; if(M.empty&&!M.originSet){M.ox=a;M.oy=b;M.originSet=true;}}
   buildPaths(M);
 }
+// şev üst / şev alt etiketi: addan ya da kod sütunundan (ŞÜ, SU, ŞA, SA...)
+function tagOf(n,c){const k=((c||'')+' '+(n||'')).toLocaleUpperCase('tr').replace(/İ/g,'I');
+  const t=s=>s.replace(/Ş/g,'S').replace(/Ü/g,'U');
+  for(const w of [(c||''),(n||'')]){const W=t(w.toLocaleUpperCase('tr')); if(/^(SU|SEVUST|SEV_UST|SÜ)(\b|[\d_.-]|$)/.test(W))return 'su'; if(/^(SA|SEVALT|SEV_ALT)(\b|[\d_.-]|$)/.test(W))return 'sa';}
+  return k&&'';}
+const TAGC={su:'#ff9f43',sa:'#4fc3f7'}, TAGN={su:'Şev üst',sa:'Şev alt'};
 function nextName(){let i=UP.length+1; const has=n=>UP.some(p=>p.n===n); while(has('N'+i))i++; return 'N'+i;}
 function addPoint(p,quiet){
   const first=!M||!M.items.length;
   const q={n:(p.n||'').trim().replace(/\s+/g,'_')||nextName(),y:p.y,x:p.x,z:p.z==null||!isFinite(p.z)?null:p.z};
+  const tg=p.t||tagOf(q.n,p.c); if(tg)q.t=tg;
   UP.push(q); saveUser(); if(!quiet){syncUser(); showApp(); first?fit():ensureVisible();} return q.n;
 }
 function ensureVisible(){ // girilen noktalardan biri ekran dışındaysa hepsini sığdır
@@ -525,12 +547,12 @@ function parseLines(t){ // her satır: ad Y X Z  (ayraç boşluk, sekme, ; veya 
     let tok=l.split(/[\s;\t]+/).filter(Boolean); if(tok.length<3)tok=l.split(/[\s,;\t]+/).filter(Boolean);
     let n='',k=0; if(tok.length>=4||!isFinite(num(tok[0]))){n=tok[0];k=1;}
     const y=num(tok[k]),x=num(tok[k+1]),z=num(tok[k+2]);
-    if(!isFinite(y)||!isFinite(x)){bad.push(i+1);return;} out.push({n,y,x,z:isFinite(z)?z:null});});
+    if(!isFinite(y)||!isFinite(x)){bad.push(i+1);return;} out.push({n,y,x,z:isFinite(z)?z:null,c:tok[k+3]||''});});
   return {out,bad};
 }
 function openPoints(){
   const sel=new Set((openPoints.sel||[]).filter(n=>UP.some(p=>p.n===n)));
-  const rows=UP.map((p,i)=>`<div class="prow"><input type="checkbox" data-sel="${i}" ${sel.has(p.n)?'checked':''} aria-label="${esc(p.n)} seç"><div class="pc"><b>${esc(p.n)}</b>${f3(p.y)}  ${f3(p.x)}${p.z!=null?'  '+f3(p.z):''}</div><button class="del" data-del="${i}" aria-label="${esc(p.n)} sil">×</button></div>`).join('');
+  const rows=UP.map((p,i)=>`<div class="prow"><input type="checkbox" data-sel="${i}" ${sel.has(p.n)?'checked':''} aria-label="${esc(p.n)} seç"><div class="pc"><b>${esc(p.n)}${p.t?` <i class="tg ${p.t}">${TAGN[p.t]}</i>`:''}</b>${f3(p.y)}  ${f3(p.x)}${p.z!=null?'  '+f3(p.z):''}</div><button class="del" data-del="${i}" aria-label="${esc(p.n)} sil">×</button></div>`).join('');
   const shp=US.map((s,i)=>`<div class="prow"><div class="pc"><b>${s.closed?'Alan':'Çizgi'} ${i+1}</b>${s.pts.map(p=>esc(p.n||'•')).join('–')}${s.closed?' · '+polyArea(s.pts).toFixed(2)+' m²':' · '+polyLen(s.pts,false).toFixed(2)+' m'}</div>${s.closed?`<button class="del" data-calc="${i}" aria-label="Hesapla" style="font-size:13px;width:auto;padding:0 10px;border-radius:10px">Hesap</button>`:''}<button class="del" data-sdel="${i}" aria-label="Sil">×</button></div>`).join('');
   sheet('Noktalar ('+UP.length+')',`
     <form class="pform" id="pForm" autocomplete="off">
@@ -545,6 +567,9 @@ function openPoints(){
       <button class="btng" id="pPasteBtn" type="button" style="width:100%;margin-top:8px">Hepsini ekle</button></details>
     ${UP.length>=2?`<div class="two"><button id="pDraw" type="button">Elle çiz</button><button id="pCalc" type="button">Alan / hacim</button></div>
     <p class="note" style="margin:2px 0 6px">Alan ve hacim işaretlediğin noktalarla, işaret yoksa tüm noktalarla hesaplanır. Alan, noktaların listedeki sırasıyla çizilen şekildir.</p>`:''}
+    ${UP.length>=2?`<div class="sec">Şev</div><div class="three"><button type="button" data-tag="su">Şev üst yap</button><button type="button" data-tag="sa">Şev alt yap</button><button type="button" data-tag="">Etiketi kaldır</button></div>
+    <p class="note" style="margin:2px 0 6px">Noktaları işaretleyip etiketle. Adı ŞÜ/SU ile başlayanlar şev üst, ŞA/SA ile başlayanlar şev alt olarak kendiliğinden işaretlenir.</p>
+    ${UP.filter(p=>p.t==='su').length>=3?`<button class="btnp" id="pSev" type="button" style="width:100%;margin-bottom:6px">Şev kübajı hesapla</button>`:''}`:''}
     ${US.length?`<div class="sec">Çizimlerim</div>${shp}`:''}
     ${UP.length?`<div class="sec">Girilen noktalar</div>${rows}<div class="two" style="margin-top:12px"><button id="pFit" type="button">Haritada göster</button><button id="pClr" type="button" class="danger" style="color:var(--err)">${openPoints.arm?'Emin misin? Sil':'Tümünü sil'}</button></div>`:'<p class="note">Henüz nokta yok. Koordinatını yazıp “Ekle”ye bas, ya da Koordinat modunda çizimdeki bir yere dokunup “Nokta ekle” de.</p>'}`);
   openPoints.arm=false;
@@ -561,12 +586,51 @@ function openPoints(){
     if(t.dataset.del!=null){keep(); UP.splice(+t.dataset.del,1); saveUser(); syncUser(); draw(); openPoints(); return;}
     if(t.dataset.sdel!=null){US.splice(+t.dataset.sdel,1); saveUser(); draw(); keep(); openPoints(); return;}
     if(t.dataset.calc!=null){const s=US[+t.dataset.calc]; openCalc('Alan '+(+t.dataset.calc+1),s.pts,zpFor(s.pts),true); return;}
+    if(t.dataset.tag!=null){keep(); const s=new Set(openPoints.sel); if(!s.size){toast('Önce noktaları işaretle');return;}
+      UP.forEach(p=>{if(s.has(p.n)){if(t.dataset.tag)p.t=t.dataset.tag; else delete p.t;}}); openPoints.sel=[]; saveUser(); syncUser(); draw(); openPoints();
+      toast(s.size+' nokta: '+(TAGN[t.dataset.tag]||'etiket kaldırıldı')); return;}
+    if(t.id==='pSev'){openSev(); return;}
     if(t.id==='pFit'){closeSheet(); fit(); return;}
     if(t.id==='pClr'){if(!openPoints.armed){openPoints.armed=true; t.textContent='Emin misin? Sil'; return;} openPoints.armed=false; UP=[];US=[]; openPoints.sel=[]; saveUser(); syncUser(); draw(); openPoints(); toast('Noktalar silindi'); return;}
     if(t.id==='pDraw'){keep(); closeSheet(); showApp(); ensureVisible(); if(mode!=='draw')setMode('draw'); return;}
     if(t.id==='pCalc'){keep(); const s=new Set(openPoints.sel); const pts=s.size>=3?UP.filter(p=>s.has(p.n)):UP; if(pts.length<3){toast('En az 3 nokta gerekir');return;} openCalc(s.size>=3?s.size+' seçili nokta':'Tüm noktalar',pts,pts.filter(p=>p.z!=null));}
   };
   openPoints.armed=false;
+}
+function selfX(P){const n=P.length; const cr=(a,b,c)=>(b.y-a.y)*(c.x-a.x)-(b.x-a.x)*(c.y-a.y);
+  for(let i=0;i<n;i++)for(let j=i+2;j<n;j++){if(i===0&&j===n-1)continue; const a=P[i],b=P[(i+1)%n],c=P[j],d=P[(j+1)%n];
+    if(cr(a,b,c)*cr(a,b,d)<0&&cr(c,d,a)*cr(c,d,b)<0)return true;} return false;}
+function sevRing(t){ // ölçüm sırasıyla; kendini kesiyorsa merkez etrafında açıya göre sıralanır
+  const P=UP.filter(p=>p.t===t); if(P.length<4||!selfX(P))return P;
+  const cy=P.reduce((a,p)=>a+p.y,0)/P.length, cx=P.reduce((a,p)=>a+p.x,0)/P.length;
+  return P.slice().sort((a,b)=>Math.atan2(a.x-cx,a.y-cy)-Math.atan2(b.x-cx,b.y-cy));}
+function lidZ(L,tris,y,x){ // üst yüzeyin (şev üst ağı) bu noktadaki kotu
+  let best=null,bd=Infinity;
+  for(const t of tris){const A=L[t[0]],B=L[t[1]],C=L[t[2]], D=(B.x-C.x)*(A.y-C.y)+(C.y-B.y)*(A.x-C.x); if(!D)continue;
+    const u=((B.x-C.x)*(y-C.y)+(C.y-B.y)*(x-C.x))/D, v=((C.x-A.x)*(y-C.y)+(A.y-C.y)*(x-C.x))/D, w=1-u-v, m=Math.min(u,v,w);
+    if(m>=-1e-9)return u*A.z+v*B.z+w*C.z; if(-m<bd){bd=-m;best=u*A.z+v*B.z+w*C.z;}}
+  return best;}
+function openSev(){
+  const SU=sevRing('su').filter(p=>p.z!=null), SA=sevRing('sa');
+  if(SU.length<3){toast('En az 3 kotlu şev üst noktası gerekir');return;}
+  const lid=delaunay(SU), seen=new Set();
+  const Z=zpFor(SU).concat(UP.filter(p=>p.z!=null&&pip(p.y,p.x,SU))).filter(p=>{const k=p.y.toFixed(3)+','+p.x.toFixed(3); if(seen.has(k))return false; seen.add(k); return true;});
+  let tris=delaunay(Z).filter(t=>pip((Z[t[0]].y+Z[t[1]].y+Z[t[2]].y)/3,(Z[t[0]].x+Z[t[1]].x+Z[t[2]].x)/3,SU));
+  const D=Z.map(p=>({y:p.y,x:p.x,z:p.z-lidZ(SU,lid,p.y,p.x)})), r=volume(D,tris,0);
+  const ua=polyArea(SU), ta=SA.length>2?polyArea(SA):0, avg=(P)=>P.length?P.reduce((a,p)=>a+p.z,0)/P.length:null;
+  const sz=avg(SU), az=avg(SA.filter(p=>p.z!=null)), inner=Z.length-SU.length;
+  TIN={p:Z,tris}; draw();
+  sheet('Şev kübajı',`<div class="rrow"><span class="k">Kazı hacmi</span><span class="v cut">${r.fill.toFixed(2)} m³</span></div>
+    ${r.cut>0.005?`<div class="rrow"><span class="k">Şev üstünü aşan (yığın)</span><span class="v fill">${r.cut.toFixed(2)} m³</span></div>`:''}
+    <div class="rrow"><span class="k">Üst açıklık alanı (şev üst)</span><span class="v">${ua.toFixed(2)} m²</span></div>
+    ${ta?`<div class="rrow"><span class="k">Taban alanı (şev alt)</span><span class="v">${ta.toFixed(2)} m²</span></div>`:''}
+    <div class="rrow"><span class="k">Ortalama derinlik</span><span class="v">${ua?(r.fill/ua).toFixed(2):'-'} m</span></div>
+    <div class="rrow"><span class="k">Şev üst ort. kot</span><span class="v">${f3(sz)}</span></div>
+    ${az!=null?`<div class="rrow"><span class="k">Şev alt ort. kot</span><span class="v">${f3(az)}</span></div>`:''}
+    <p class="note">Üst yüzey ${SU.length} şev üst noktasından kurulur (kazıdan önceki zemin gibi). Alt yüzey; şev üst, şev alt ve sınırın içindeki ${inner} kotlu noktadan kurulan üçgen ağıdır. Kazı, iki yüzey arasında kalan hacimdir.${SA.length&&SA.length<3?' Taban alanı için en az 3 şev alt noktası gerekir.':''}</p>
+    <div class="two" style="margin-top:12px"><button id="sCopy" type="button">Kopyala</button><button id="sBack" type="button">Noktalar</button></div>`);
+  $('sBack').onclick=()=>openPoints();
+  $('sCopy').onclick=()=>copyText(`Şev kübajı\nKazı: ${r.fill.toFixed(2)} m³${r.cut>0.005?'\nYığın: '+r.cut.toFixed(2)+' m³':''}\nÜst açıklık alanı: ${ua.toFixed(2)} m²${ta?'\nTaban alanı: '+ta.toFixed(2)+' m²':''}\nŞev üst ort. kot: ${f3(sz)}${az!=null?'\nŞev alt ort. kot: '+f3(az):''}`);
 }
 function zpFor(poly){ // köşelerin kotları + şeklin içinde kalan kotlu noktalar
   const inside=M.dots.filter(it=>it.L.visible&&it.z!=null&&isFinite(it.z)&&pip(it.xy[0][0],it.xy[0][1],poly)).map(it=>({n:(it.name||'').trim(),y:it.xy[0][0],x:it.xy[0][1],z:it.z}));
