@@ -430,13 +430,15 @@ function openExport(){
     <div class="fmt">
       <button data-f="ncn"><b>NCN</b><span>Netcad nokta dosyası</span></button>
       <button data-f="gsi"><b>GSI</b><span>Leica total station (GSI-16)</span></button>
+      <button data-f="dxf"><b>DXF</b><span>Çizim, noktalar, şev çizgileri</span></button>
       <button data-f="xlsx"><b>Excel</b><span>Nokta, Y, X, Z sütunları</span></button>
       <button data-f="csv"><b>CSV</b><span>Excel'de ayrı hücreler</span></button>
     </div>`);
   $('shBody').querySelector('.fmt').onclick=e=>{const b=e.target.closest('button[data-f]'); if(!b)return;
-    const pts=exportPoints($('xVis').checked); if(!pts.length){toast('Aktarılacak nokta yok.');return;}
     const base=(M.file||'pafta').replace(/\.[^.]+$/,'').replace(/[\\/:*?"<>|]/g,'_');
     const f=b.dataset.f;
+    if(f==='dxf'){saveText(base+'.dxf',buildDXF($('xVis').checked).join('\r\n')+'\r\n');return;}
+    const pts=exportPoints($('xVis').checked); if(!pts.length){toast('Aktarılacak nokta yok.');return;}
     if(f==='ncn')saveText(base+'.NCN',pts.map(p=>`${p.n} ${p.y.toFixed(3)} ${p.x.toFixed(3)} ${p.z.toFixed(3)}`).join('\r\n')+'\r\n');
     if(f==='gsi')saveText(base+'.GSI',buildGSI(pts).join('\r\n')+'\r\n');
     if(f==='csv')saveText(base+'.csv','﻿'+buildCSV(pts).join('\r\n')+'\r\n');
@@ -455,6 +457,37 @@ function openAbout(){
 }
 
 /* ---------- dışa aktarma biçimleri ---------- */
+// DXF (R12 biçimi: POLYLINE/VERTEX, POINT, TEXT): açık çizim, girilen noktalar, elle çizilenler ve şev çizgileri
+function buildDXF(onlyVisible){
+  const L=[], g=(c,v)=>{L.push(String(c));L.push(String(v));}, n=v=>(+v).toFixed(4);
+  const lay=s=>(String(s||'0').replace(/[ğĞ]/g,'G').replace(/[üÜ]/g,'U').replace(/[şŞ]/g,'S').replace(/[ıİ]/g,'I').replace(/[öÖ]/g,'O').replace(/[çÇ]/g,'C')
+    .toUpperCase().replace(/[^A-Z0-9_$-]+/g,'_').slice(0,31))||'0';
+  const txt=s=>String(s).replace(/[\r\n]/g,' ').replace(/[^\x20-\x7e]/g,c=>'\\U+'+c.charCodeAt(0).toString(16).toUpperCase().padStart(4,'0'));
+  const poly=(layer,P,closed,z)=>{if(P.length<2)return; g(0,'POLYLINE');g(8,layer);g(66,1);g(10,0);g(20,0);g(30,0);g(70,closed?1:0);
+    P.forEach(q=>{g(0,'VERTEX');g(8,layer);g(10,n(q[0]));g(20,n(q[1]));g(30,n(z||0));}); g(0,'SEQEND');g(8,layer);};
+  const pts=[]; let minY=Infinity,maxY=-Infinity,minX=Infinity,maxX=-Infinity;
+  M.items.forEach(it=>it.xy.forEach(c=>{minY=Math.min(minY,c[0]);maxY=Math.max(maxY,c[0]);minX=Math.min(minX,c[1]);maxX=Math.max(maxX,c[1]);}));
+  const h=Math.min(2,Math.max(0.15,+((Math.max(maxY-minY,maxX-minX,1))/150).toFixed(2)));
+  g(0,'SECTION');g(2,'ENTITIES');
+  M.items.forEach(it=>{
+    if(onlyVisible&&!it.L.visible)return;
+    const layer=it.user?'GIRILEN_NOKTALAR':lay(it.L.name);
+    if(it.kind==='Text'){if(!it.text)return; const c=it.xy[0]; g(0,'TEXT');g(8,layer);g(10,n(c[0]));g(20,n(c[1]));g(30,0);g(40,it.h||h);if(it.rot)g(50,n(it.rot));g(1,txt(it.text));return;}
+    if((it.kind==='Point'||it.kind==='Symbol')&&it.xy.length===1){const c=it.xy[0], z=it.z||0;
+      g(0,'POINT');g(8,it.user&&it.name&&UP.find(p=>p.n===it.name&&p.t)?(UP.find(p=>p.n===it.name).t==='su'?'SEV_UST':'SEV_ALT'):layer);g(10,n(c[0]));g(20,n(c[1]));g(30,n(z));
+      const nm=(it.name||'').trim(); if(nm){g(0,'TEXT');g(8,layer+'_AD');g(10,n(c[0]+h*0.4));g(20,n(c[1]+h*0.4));g(30,n(z));g(40,h);g(1,txt(nm));}
+      return;}
+    if(it.xy.length>1)poly(layer,it.xy,it.closed,0);
+  });
+  if(UL.visible||!onlyVisible){
+    US.forEach(sh=>poly('CIZIMLERIM',sh.pts.map(p=>[p.y,p.x]),sh.closed,0));
+    const su=sevRing('su'), sa=sevRing('sa');
+    if(su.length>1)poly('SEV_UST',su.map(p=>[p.y,p.x]),su.length>2,0);
+    if(sa.length>1)poly('SEV_ALT',sa.map(p=>[p.y,p.x]),sa.length>2,0);
+  }
+  g(0,'ENDSEC');g(0,'EOF');
+  return L;
+}
 function buildGSI(pts){ // GSI-16, mm
   const val=v=>(v<0?'-':'+')+String(Math.round(Math.abs(v)*1000)).padStart(16,'0').slice(-16);
   return pts.map((p,i)=>{const nm=p.n.length>16?p.n.slice(-16):p.n;
